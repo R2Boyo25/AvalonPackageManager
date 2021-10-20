@@ -4,6 +4,12 @@ import requests
 class e404(Exception):
     pass
 
+def getRepos(user):
+
+    r = requests.request("GET", "https://api.github.com/users/"+user+"/repos").json()
+
+    return r
+
 def getPackageInfo(pkgname):
     r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
     try:

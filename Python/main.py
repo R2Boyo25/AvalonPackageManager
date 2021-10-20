@@ -1,23 +1,18 @@
-import requests, json
-from os import path
-import os
+import sys
 
-from package import Package
-from pmUtil import *
+if not len(sys.argv) > 1:
+    print("""
+    Try --gui.
+    """)
+    quit()
 
-def getRepos(user):
-
-    r = requests.request("GET", "https://api.github.com/users/"+user+"/repos").json()
-
-    return r
-
-if __name__ == "__main__":
-
-    repos = getRepos("r2boyo25")
-    for i in repos:
-        if isAvalonPackage(i):
-            print('-----')
-            for ii in Package(i):
-                print(ii)
-            print('-----')
-
+if sys.argv[1] == '--gui' or sys.argv[1] == '-g':
+    try:
+        import PyQt5
+    except:
+        print('PyQt5 not installed')
+        quit()
+    import GUI
+    GUI.main()
+else:
+    CLI.main(sys.argv[1:])
