@@ -1,10 +1,10 @@
 import sys
 
-if not len(sys.argv) > 1:
-    print("""
-    Try --gui.
-    """)
-    quit()
+#if not len(sys.argv) > 1:
+#    print("""
+#    Try --gui.
+#    """)
+#    quit()
 
 if sys.argv[1] == '--gui' or sys.argv[1] == '-g':
     try:

@@ -10,12 +10,25 @@ def getRepos(user):
 
     return r
 
-def getPackageInfo(pkgname):
+def getRepoPackageInfo(pkgname):
     r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
     try:
         return r.json()
     except:
         raise e404()
+
+def getMainRepoPackageInfo(pkgname):
+    r = requests.get(f'https://raw.githubusercontent.com/r2boyo25/avalonpmpackages/main/{pkgname}/package')
+    try:
+        return r.json()
+    except:
+        raise e404()
+
+def getPackageInfo(pkgname):
+    try:
+        return getRepoPackageInfo(pkgname)
+    except:
+        return getMainRepoPackageInfo(pkgname)
 
 def isAvalonPackage(jsonobj):
     try:
@@ -23,3 +36,4 @@ def isAvalonPackage(jsonobj):
         return True
     except e404:
         return False
+        
