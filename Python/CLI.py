@@ -14,7 +14,10 @@ def helpCommand(args):
         print(functions[args[0]]['help'])
 
 def main(args):
-    if args[0] == "--help" or "-h":
+    if len(args) == 0:
+        return
+    
+    elif args[0] == "--help" or "-h":
         helpCommand(args)
     
     elif args[0] in functions:

@@ -4,7 +4,11 @@ import requests
 class e404(Exception):
     pass
 
-def getRepos(user):
+def getRepos(user, cache = True):
+    if cache:
+
+    else:
+        
 
     r = requests.request("GET", "https://api.github.com/users/"+user+"/repos").json()
 
