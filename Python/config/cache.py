@@ -1,6 +1,6 @@
 import json
 import os
-from jsonobj import JsonObj
+from config.jsonobj import JsonObj
 
 class Cache(JsonObj):
     def __init__(self, text, config):

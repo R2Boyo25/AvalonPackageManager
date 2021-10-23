@@ -11,7 +11,10 @@ class Package:
         self.apiurl = jsonobj['url']
 
     def __getitem__(self, name):
-        return self.__getAttr__()[name]
+        try:
+            return self.__getAttr__()[name]
+        except:
+            return None
     
     def __getAttr__(self):
         attrs = {}
@@ -32,4 +35,21 @@ class Package:
         self.curiter += 1
         return curkey, self.__getAttr__()[curkey]
 
+class NPackage:
+    def __init__(self, d):
+        self.idict = d
+    
+    def __getitem__(self, item):
+        try:
+            return self.idict[item]
+        except:
+            return None
+    
+    def __setitem__(self, item, value):
+        self.idict[item] = value
+    
+    def keys(self):
+        return self.idict.keys()
 
+    def __str__(self):
+        return str(self.idict)

@@ -5,20 +5,28 @@ import os, sys
 from package import Package
 from pmUtil import *
 from path import *
+from cfg import *
 
 def helpCommand(args):
     if len(args) == 1:
         for func in functions:
-            print()
+            print(func, ":", functions[func]['help'])
     else:
         print(functions[args[0]]['help'])
+
+functions = {
+    "install":{
+            "help":"Installs a package",
+            "func":installPackage
+        }
+}
 
 def main(args):
     if len(args) == 0:
         return
     
-    elif args[0] == "--help" or "-h":
+    elif args[0] == "--help" or args[0] == "-h":
         helpCommand(args)
     
     elif args[0] in functions:
-        functions[args[0]]["func"]()
+        functions[args[0]]["func"]((srcpath, binpath, cachepath, configpath), args[1:])

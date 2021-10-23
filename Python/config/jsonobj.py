@@ -4,11 +4,14 @@ import os
 class JsonObj:
     def __init__(self, text):
         self.location = text
-        self.load(text)
+        self.load()
 
     def __getitem__(self, item):
         self.load()
-        return self.config[item]
+        try:
+            return self.config[item]
+        except:
+            return False
     
     def __setitem__(self, item, value):
         self.load()

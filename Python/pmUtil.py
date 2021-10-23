@@ -1,14 +1,21 @@
-from package import Package
+from package import Package, NPackage
 import requests
+import os
+import shutil
+import color
 
 class e404(Exception):
     pass
 
+def error(*text):
+    color.error(*text)
+    quit()
+
 def getRepos(user, cache = True):
     if cache:
-
+        pass
     else:
-        
+        pass
 
     r = requests.request("GET", "https://api.github.com/users/"+user+"/repos").json()
 
@@ -30,9 +37,9 @@ def getMainRepoPackageInfo(pkgname):
 
 def getPackageInfo(pkgname):
     try:
-        return getRepoPackageInfo(pkgname)
+        return NPackage(getRepoPackageInfo(pkgname))
     except:
-        return getMainRepoPackageInfo(pkgname)
+        return NPackage(getMainRepoPackageInfo(pkgname))
 
 def isAvalonPackage(jsonobj):
     try:
@@ -40,4 +47,73 @@ def isAvalonPackage(jsonobj):
         return True
     except e404:
         return False
-        
+
+def downloadPackage(srcFolder, packageUrl, packagename = None):
+    if not packagename: packagename = packageUrl.lstrip("https://github.com/")
+    os.chdir(srcFolder)
+    os.system('git clone ' + packageUrl + ' ' + packagename)
+
+def deletePackage(srcFolder, binFolder, packagename):
+    rmFromSrc(srcFolder, packagename)
+    rmFromBin(binFolder, packagename)
+
+def rmFromSrc(srcFolder, packagename):
+    if os.path.exists(f"{srcFolder}/{packagename}"):
+        shutil.rmtree(f"{srcFolder}/{packagename}", ignore_errors=True)
+
+def rmFromBin(binFolder, packagename):
+    pkg = getPackageInfo(packagename)
+    if os.path.exists(f"{binFolder}/{pkg['binname']}"):
+        os.remove(f"{binFolder}/{pkg['binname']}")
+        #shutil.rmtree(f"{binFolder}/{packagename}", ignore_errors=True)
+
+def mvBinToBin(binFolder, binFile, binName):
+    print(binFolder, binFile, binName)
+    os.rename(binFile, binFolder+'/'+binName)
+
+def compilePackage(srcFolder, binFolder, packagename):
+    pkg = getPackageInfo(packagename)
+    os.chdir(f"{srcFolder}/{packagename}")
+    if not os.path.exists(binFolder+f'/{packagename}'):
+
+        os.makedirs(binFolder+f'/{packagename}')
+
+    if pkg['needsCompiled']:
+
+        if not pkg['binname']:
+
+            error("Package needs compiled but there is no binname for Avalon to install.....")
+
+        if pkg['compileScript']:
+
+            color.note("Compile script found, compiling.....")
+            if os.system(f"bash {pkg['compileScript']} \"{srcFolder+f'/{packagename}'}\" \"{pkg['binname']}\""):
+
+                error("Compile script failed!")
+
+            mvBinToBin(binFolder, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
+
+        else:
+            error("Program needs compiling but no compilation script found... exiting.....")
+
+    else:
+        color.warn("Program does not need to be compiled, moving to installation.....")
+
+    if pkg['installScript']:
+
+        color.note("Installing.....")
+        if os.system(f"bash {pkg['installScript']} \"{binFolder+ '/' + pkg['binname']}\""):
+            
+            error("Install script failed!")
+
+    else:
+        color.warn('No installation script found..... program might not be usable unless it was installed by the compilation script.....')
+
+def installPackage(paths, args):
+    color.note("Deleting old binaries and source files.....")
+    deletePackage(paths[0], paths[1], args[0])
+    color.note("Downloading from github.....")
+    downloadPackage(paths[0], "https://github.com/" + args[0])
+    color.note("Beginning compilation/installation.....")
+    compilePackage(paths[0], paths[1], args[0])
+    color.success("Done!")
