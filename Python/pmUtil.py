@@ -68,7 +68,6 @@ def rmFromBin(binFolder, packagename):
         #shutil.rmtree(f"{binFolder}/{packagename}", ignore_errors=True)
 
 def mvBinToBin(binFolder, binFile, binName):
-    print(binFolder, binFile, binName)
     os.rename(binFile, binFolder+'/'+binName)
 
 def compilePackage(srcFolder, binFolder, packagename):
@@ -103,7 +102,7 @@ def compilePackage(srcFolder, binFolder, packagename):
 
         color.note("Installing.....")
         if os.system(f"bash {pkg['installScript']} \"{binFolder+ '/' + pkg['binname']}\""):
-            
+
             error("Install script failed!")
 
     else:
