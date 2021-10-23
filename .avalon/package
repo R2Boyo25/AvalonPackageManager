@@ -1,0 +1,4 @@
+{
+    "needsCompiled": false,
+    "installScript": ".avalon/install.sh"
+}

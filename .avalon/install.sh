@@ -1,0 +1,1 @@
+python3 .avalon/install.py $1 $2 $3

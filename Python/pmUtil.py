@@ -101,12 +101,20 @@ def compilePackage(srcFolder, binFolder, packagename):
     if pkg['installScript']:
 
         color.note("Installing.....")
-        if os.system(f"bash {pkg['installScript']} \"{binFolder+ '/' + pkg['binname']}\""):
+        if pkg['needsCompiled'] or pkg['compileScript']:
 
-            error("Install script failed!")
+            if os.system(f"bash {pkg['installScript']} \"{binFolder+ '/' + pkg['binname']}\""):
+
+                error("Install script failed!")
+        
+        else:
+            
+            if os.system(f"bash {pkg['installScript']} \"{binFolder}\" \"{srcFolder}\" \"{packagename}\""):
+
+                error("Install script failed!")
 
     else:
-        color.warn('No installation script found..... program might not be usable unless it was installed by the compilation script.....')
+        error('No installation script found.....')
 
 def installPackage(paths, args):
     color.note("Deleting old binaries and source files.....")
