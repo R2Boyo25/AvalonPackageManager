@@ -23,4 +23,4 @@ def note(*text):
     colorprint(*text, color = colors.OK)
 
 def warn(*text):
-    colorprint(*text, color = color.WARN)
+    colorprint(*text, color = colors.WARN)

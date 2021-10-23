@@ -22,11 +22,18 @@ def getRepos(user, cache = True):
     return r
 
 def getRepoPackageInfo(pkgname):
-    r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
     try:
-        return r.json()
+        r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
+        try:
+            return r.json()
+        except:
+            raise e404()
     except:
-        raise e404()
+        r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
+        try:
+            return r.json()
+        except:
+            raise e404()
 
 def getMainRepoPackageInfo(pkgname):
     r = requests.get(f'https://raw.githubusercontent.com/r2boyo25/avalonpmpackages/main/{pkgname}/package')
