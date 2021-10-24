@@ -80,7 +80,7 @@ def mvBinToBin(binFolder, binFile, binName):
 def runScript(script, *args):
     langs = {
         'py':'python3',
-        'sh','bash'
+        'sh':'bash'
     }
 
     argss = " ".join([f"\"{arg}\"" for arg in args])
