@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from package import Package, NPackage
 import requests
 import os
@@ -36,7 +38,8 @@ def getRepoPackageInfo(pkgname):
             raise e404()
 
 def getMainRepoPackageInfo(pkgname):
-    r = requests.get(f'https://raw.githubusercontent.com/r2boyo25/avalonpmpackages/main/{pkgname}/package')
+    color.debug(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')    
+    r = requests.get(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')
     try:
         return r.json()
     except:
@@ -48,9 +51,29 @@ def getPackageInfo(pkgname):
     except:
         return NPackage(getMainRepoPackageInfo(pkgname))
 
-def isAvalonPackage(jsonobj):
+def isInMainRepo(pkgname):
+    r = requests.get(f'https://raw.githubusercontent.com/r2boyo25/AvalonPMPackages/master/{pkgname}/package')
     try:
-        getPackageInfo(jsonobj['full_name'])
+        r.json()
+        return True
+    except:
+        return False
+
+def downloadMainRepo(cacheDir):
+    shutil.rmtree(cacheDir)
+    color.debug(f"git clone https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\"")
+    os.system(f"git clone https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\"")
+    
+def moveMainRepoToAvalonFolder(cacheFolder, pkgname, srcFolder):
+    color.debug(srcFolder + "/" + pkgname + "/.avalon")
+    shutil.rmtree(srcFolder + "/" + pkgname + "/.avalon", ignore_errors = True)
+    if isInMainRepo(pkgname):
+        color.debug(cacheFolder + "/" + pkgname, srcFolder + "/" + pkgname + '/.avalon')
+        shutil.copytree(cacheFolder + "/" + pkgname, srcFolder + "/" + pkgname + '/.avalon')
+
+def isAvalonPackage(repo):
+    try:
+        getRepoPackageInfo(repo)
         return True
     except e404:
         return False
@@ -133,7 +156,7 @@ def compilePackage(srcFolder, binFolder, packagename):
                 error("Install script failed!")
 
     else:
-        error('No installation script found.....')
+        color.warn('No installation script found... Assuming installation beyond APM\'s autoinstaller isn\'t neccessary')
 
 def installPackage(paths, args):
     if '--debug' in args or '-d' in args:
@@ -145,6 +168,12 @@ def installPackage(paths, args):
     deletePackage(paths[0], paths[1], args[0])
     color.note("Downloading from github.....")
     downloadPackage(paths[0], "https://github.com/" + args[0])
+            
+    if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):
+        color.note("Package is not an Avalon package, but it is in the main repository... Downloading.....")
+        downloadMainRepo(paths[2])
+        moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
+        
     color.note("Beginning compilation/installation.....")
     compilePackage(paths[0], paths[1], args[0])
     color.success("Done!")
@@ -154,6 +183,11 @@ def uninstallPackage(paths, args):
         color.isDebug = True
     else:
         color.isDebug = False
+
+    if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):
+        color.note("Package is not an Avalon package, but it is in the main repository... Downloading.....")
+        downloadMainRepo(paths[2])
+        moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
 
     pkg = getPackageInfo(args[0])
     color.note("Uninstalling.....")
@@ -173,4 +207,4 @@ def uninstallPackage(paths, args):
 
         deletePackage(paths[0], paths[1], args[0])
     
-    color.success("Sucessfully uninstalled package!")
+    color.success("Successfully uninstalled package!")

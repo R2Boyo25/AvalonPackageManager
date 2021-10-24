@@ -7,10 +7,22 @@ from pmUtil import *
 from path import *
 from cfg import *
 
+def getLongest(things):
+    longestThing = 0
+    for thing in things:
+        if len(thing) > longestThing:
+            longestThing = len(thing)
+    return longestThing
+
+def getPadded(thing, longest):
+    padamount = ( longest ) - len(thing)
+    return thing + ( " " * padamount )
+
 def helpCommand(args):
     if len(args) == 1:
+        longest = getLongest(functions)
         for func in functions:
-            print(func, ":", functions[func]['help'])
+            print(getPadded(func, longest), ":", functions[func]['help'])
     else:
         print(functions[args[0]]['help'])
 
