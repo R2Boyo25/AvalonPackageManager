@@ -120,7 +120,7 @@ def installAvalonDeps(paths, args, deps):
     if deps['avalon']:
         color.note("Found avalon dependencies, installing.....")
         for dep in deps['avalon']:
-            if not os.path.exists(paths[0] + dep):
+            if not os.path.exists(paths[0] + dep) or '--update' in args or '-U' in args:
                 args[0] = dep
                 installPackage(paths, args)
             
