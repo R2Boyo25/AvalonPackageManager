@@ -151,7 +151,7 @@ def installDeps(paths, args):
         installAptDeps(pkgdeps)
         installAvalonDeps(paths, args, pkgdeps)
         installPipDeps(pkgdeps)
-    reqTxt(pkgname)
+    reqTxt(args[0])
 
 def runScript(script, *args):
     langs = {
