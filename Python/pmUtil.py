@@ -137,7 +137,7 @@ def compilePackage(srcFolder, binFolder, packagename):
 
         if not pkg['binname']:
 
-            error("Package needs compiled but there is no binname for Avalon to install.....")
+            color.warn("Package needs compiled but there is no binname for Avalon to install, assuming installed by compile script.....")
 
         if pkg['compileScript']:
 
