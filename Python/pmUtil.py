@@ -107,12 +107,22 @@ def installAptDeps(deps):
             color.debug(f'sudo apt install {dep}')
             os.system(f'sudo apt install {dep}')
 
-def installDeps(pkgname):
-    pkg = getPackageInfo(pkgname)
+def installAvalonDeps(paths, args, deps):
+    args = args.copy()
+    if deps['avalon']:
+        color.note("Found avalon dependencies, installing.....")
+        for dep in deps['avalon']:
+            if not os.path.exists(paths[0] + dep):
+                args[0] = dep
+                installPackage(paths, args)
+            
+def installDeps(paths, args):
+    pkg = getPackageInfo(args[0])
     if pkg['deps']:
         color.note("Found dependencies, installing.....")
         pkgdeps = pkg['deps']
         installAptDeps(pkgdeps)
+        installAvalonDeps(paths, args, pkgdeps)
 
 def runScript(script, *args):
     langs = {
@@ -188,7 +198,7 @@ def installPackage(paths, args):
         downloadMainRepo(paths[2])
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
     
-    installDeps(args[0])
+    installDeps(paths, args)
 
     color.note("Beginning compilation/installation.....")
     compilePackage(paths[0], paths[1], args[0])
