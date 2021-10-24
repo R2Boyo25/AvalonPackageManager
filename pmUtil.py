@@ -138,7 +138,6 @@ def installPipDeps(deps):
     os.system(f"pip3 install {depss}")
 
 def reqTxt(pkgname):
-    color.debug(os.getcwd())
     if os.path.exists(pkgname + '/' + 'requirements.txt'):
         color.note("Requirements.txt found, installing.....")
         os.system(f'pip3 install -r {pkgname}/requirements.txt')
