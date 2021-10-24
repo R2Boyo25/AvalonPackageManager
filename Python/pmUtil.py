@@ -85,7 +85,7 @@ def runScript(script, *args):
 
     argss = " ".join([f"{arg}" for arg in args])
 
-    if script.split('.')[-1] in langs:
+    if script.split('.')[-1].lower() in langs:
         color.debug(f"{langs[script.split('.')[-1]]} {script} {argss}")
         return os.system(f"{langs[script.split('.')[-1]]} {script} {argss}")
     else:
