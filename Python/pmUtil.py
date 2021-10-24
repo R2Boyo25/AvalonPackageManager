@@ -101,6 +101,10 @@ def mvBinToBin(binFolder, binFile, binName):
     os.rename(binFile, binFolder+'/'+binName)
 
 def installAptDeps(deps):
+    try:
+        deps['apt']
+    except:
+        return
     if deps['apt']:
         color.note("Found apt dependencies, installing..... (this will require your password)")
         for dep in deps['apt']:
@@ -108,6 +112,10 @@ def installAptDeps(deps):
             os.system(f'sudo apt install {dep}')
 
 def installAvalonDeps(paths, args, deps):
+    try:
+        deps['avalon']
+    except:
+        return
     args = args.copy()
     if deps['avalon']:
         color.note("Found avalon dependencies, installing.....")
