@@ -13,3 +13,5 @@ with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
 
     with open(os.path.expanduser('~/.bashrc'), 'w') as wbc:
         wbc.write(nbashrc)
+
+os.remove(binDir + '/avalon')

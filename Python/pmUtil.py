@@ -95,9 +95,6 @@ def runScript(script, *args):
 def compilePackage(srcFolder, binFolder, packagename):
     pkg = getPackageInfo(packagename)
     os.chdir(f"{srcFolder}/{packagename}")
-    if not os.path.exists(binFolder+f'/{packagename}'):
-
-        os.makedirs(binFolder+f'/{packagename}')
 
     if pkg['needsCompiled']:
 
