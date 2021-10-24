@@ -1,5 +1,6 @@
 import sys
-import GUI, CLI
+#import GUI
+import CLI
 
 if len(sys.argv) > 1:
     if sys.argv[1] == '--gui' or sys.argv[1] == '-g':
