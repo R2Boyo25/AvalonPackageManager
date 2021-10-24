@@ -137,9 +137,9 @@ def installPipDeps(deps):
     color.debug(f"pip3 install {depss}")
     os.system(f"pip3 install {depss}")
 
-def reqTxt():
+def reqTxt(pkgname):
     color.debug(os.getcwd())
-    if os.path.exists('requirements.txt'):
+    if os.path.exists(pkgname + 'requirements.txt'):
         color.note("Requirements.txt found, installing.....")
         os.system('pip3 install -r requirement.txt')
 
@@ -151,7 +151,7 @@ def installDeps(paths, args):
         installAptDeps(pkgdeps)
         installAvalonDeps(paths, args, pkgdeps)
         installPipDeps(pkgdeps)
-    reqTxt()
+    reqTxt(pkgname)
 
 def runScript(script, *args):
     langs = {
