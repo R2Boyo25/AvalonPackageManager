@@ -150,3 +150,24 @@ def installPackage(paths, args):
     color.note("Beginning compilation/installation.....")
     compilePackage(paths[0], paths[1], args[0])
     color.success("Done!")
+
+def uninstallPackage(paths, args):
+    pkg = getPackageInfo(args[0])
+    color.note("Uninstalling.....")
+    if not pkg['uninstallScript']:
+
+        color.warn("Uninstall script not found... Assuming uninstall not required and deleting files.....")
+        deletePackage(paths[0], paths[1], args[0])
+
+    else:
+
+        color.note("Uninstall script found, running.....")
+
+        os.chdir(paths[1])
+        if runScript(pkg['uninstallScript'], paths[0], paths[1], args[0], pkg['binname']):
+            
+            color.error("Uninstall script failed! Deleting files anyways.....")
+
+        deletePackage(paths[0], paths[1], args[0])
+    
+    color.success("Sucessfully uninstalled package!")

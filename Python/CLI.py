@@ -18,7 +18,11 @@ functions = {
     "install":{
             "help":"Installs a package",
             "func":installPackage
-        }
+        },
+    "uninstall":{
+            "help":"Uninstalls a package",
+            "func":uninstallPackage
+    }
 }
 
 def main(args):

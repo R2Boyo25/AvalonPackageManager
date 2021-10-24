@@ -1,4 +1,5 @@
 {
     "needsCompiled": false,
-    "installScript": ".avalon/install.py"
+    "installScript": ".avalon/install.py",
+    "uninstallScript": ".avalon/uninstall.py"
 }
