@@ -109,9 +109,10 @@ def installAptDeps(deps):
         return
     if deps['apt']:
         color.note("Found apt dependencies, installing..... (this will require your password)")
-        for dep in deps['apt']:
-            color.debug(f'sudo apt install {dep}')
-            os.system(f'sudo apt install {dep}')
+        depss = " ".join( deps['apt'] )
+
+        color.debug(f'sudo apt install {depss}')
+        os.system(f'sudo apt install {depss}')
 
 def installAvalonDeps(paths, args, deps):
     try:
@@ -125,7 +126,17 @@ def installAvalonDeps(paths, args, deps):
             if not os.path.exists(paths[0] + dep) or '--update' in args or '-U' in args:
                 args[0] = dep
                 installPackage(paths, args)
-            
+
+def installPipDeps(deps):
+    try:
+        deps['pip']
+    except:
+        return
+    color.note('Found pip dependencies, installing.....')
+    depss = " ".join( deps['pip'] )
+    color.debug(f"pip3 install {depss}")
+    os.system(f"pip3 install {depss}")
+
 def installDeps(paths, args):
     pkg = getPackageInfo(args[0])
     if pkg['deps']:
@@ -133,6 +144,7 @@ def installDeps(paths, args):
         pkgdeps = pkg['deps']
         installAptDeps(pkgdeps)
         installAvalonDeps(paths, args, pkgdeps)
+        installPipDeps(pkgdeps)
 
 def runScript(script, *args):
     langs = {

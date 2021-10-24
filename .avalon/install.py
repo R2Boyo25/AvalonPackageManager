@@ -13,7 +13,7 @@ with open(f"{binDir}/avalon", "w") as avalonStarter:
 with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
     bashrc = rbc.read()
     if not binDir in bashrc:
-        nbashrc = bashrc + f'''\nexport PATH="$PATH:{binDir}"'''
+        nbashrc = f'''\nexport PATH="$PATH:{binDir}"''' + bashrc
     else:
         nbashrc = bashrc
 
