@@ -128,6 +128,7 @@ def installAvalonDeps(paths, args, deps):
                 installPackage(paths, args)
 
 def installPipDeps(deps):
+    color.debug(os.getcwd())
     if os.path.exists('requirements.txt'):
         color.note("Requirements.txt found, installing.....")
         os.system('pip3 install -r requirement.txt')
