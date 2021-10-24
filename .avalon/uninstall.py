@@ -1,7 +1,7 @@
 import os
 import sys
 
-binDir = sys.argv[1]
+binDir = sys.argv[2]
 
 os.system(f"rm -rf {os.path.expanduser('~/.avalonPM')}")
 

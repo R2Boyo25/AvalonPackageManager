@@ -166,8 +166,8 @@ def uninstallPackage(paths, args):
 
         color.note("Uninstall script found, running.....")
 
-        os.chdir(paths[0] + "/" + args[0])
-        if runScript(pkg['uninstallScript'], paths[0], paths[1], args[0], pkg['binname']):
+        os.chdir(paths[1])
+        if runScript(paths[0] + "/" + args[0] + '/' + pkg['uninstallScript'], paths[0], paths[1], args[0], pkg['binname']):
             
             color.error("Uninstall script failed! Deleting files anyways.....")
 
