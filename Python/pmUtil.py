@@ -86,7 +86,7 @@ def runScript(script, *args):
     argss = " ".join([f"\"{arg}\"" for arg in args])
 
     if script.split('.')[-1] in langs:
-        return os.system(f"{script.split('.')[-1]} {script} {argss}")
+        return os.system(f"{langs[script.split('.')[-1]]} {script} {argss}")
     else:
         return os.system(f'{langs["sh"]} {script} {argss}')
 
