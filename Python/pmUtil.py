@@ -61,8 +61,8 @@ def isInMainRepo(pkgname):
 
 def downloadMainRepo(cacheDir):
     shutil.rmtree(cacheDir)
-    color.debug(f"git clone https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\"")
-    os.system(f"git clone https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\"")
+    color.debug(f"git clone https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
+    os.system(f"git clone https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
     
 def moveMainRepoToAvalonFolder(cacheFolder, pkgname, srcFolder):
     color.debug(srcFolder + "/" + pkgname + "/.avalon")
@@ -83,7 +83,7 @@ def downloadPackage(srcFolder, packageUrl, packagename = None):
         packagename = packageUrl.lstrip("https://github.com/")
     color.debug(packagename)
     os.chdir(srcFolder)
-    os.system('git clone ' + packageUrl + ' ' + packagename)
+    os.system('git clone ' + packageUrl + ' ' + packagename + " -q")
 
 def deletePackage(srcFolder, binFolder, packagename):
     rmFromSrc(srcFolder, packagename)
