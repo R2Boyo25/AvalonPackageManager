@@ -101,7 +101,7 @@ def mvBinToBin(binFolder, binFile, binName):
     os.rename(binFile, binFolder+'/'+binName)
 
 def installAptDeps(deps):
-    if 'apt' in deps:
+    if deps['apt']:
         color.note("Found apt dependencies, installing..... (this will require your password)")
         for dep in deps['apt']:
             color.debug(f'sudo apt install {dep}')
@@ -109,7 +109,8 @@ def installAptDeps(deps):
 
 def installDeps(pkgname):
     pkg = getPackageInfo(pkgname)
-    if 'deps' in pkg:
+    if pkg['deps']:
+        color.note("Found dependencies, installing.....")
         pkgdeps = pkg['deps']
         installAptDeps(pkgdeps)
 
