@@ -80,6 +80,7 @@ def isAvalonPackage(repo):
 
 def downloadPackage(srcFolder, packageUrl, packagename = None):
     if not packagename: packagename = packageUrl.lstrip("https://github.com/")
+    color.debug(packagename)
     os.chdir(srcFolder)
     os.system('git clone ' + packageUrl + ' ' + packagename)
 
