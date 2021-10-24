@@ -199,6 +199,7 @@ def installPackage(paths, args):
     color.note("Deleting old binaries and source files.....")
     deletePackage(paths[0], paths[1], args[0])
     color.note("Downloading from github.....")
+    color.debug(paths[0], "https://github.com/" + args[0])
     downloadPackage(paths[0], "https://github.com/" + args[0])
             
     if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):
