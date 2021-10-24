@@ -1,2 +1,0 @@
-c++ main.cpp -o main -Ofast -lcurl
-./main

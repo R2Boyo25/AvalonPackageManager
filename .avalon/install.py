@@ -6,7 +6,7 @@ srcDir = sys.argv[2]
 pkgName = sys.argv[3]
 
 with open(f"{binDir}/avalon", "w") as avalonStarter:
-    filecontent = f'''python3 {srcDir}/{pkgName}/Python/main.py "$@"'''
+    filecontent = f'''python3 {srcDir}/{pkgName}/main.py "$@"'''
     avalonStarter.write(filecontent)
     os.system("chmod +x " + f"{binDir}/avalon")
 
