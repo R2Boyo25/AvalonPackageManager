@@ -140,6 +140,7 @@ def installPackage(paths, args):
         color.isDebug = True
     else:
         color.isDebug = False
+
     color.note("Deleting old binaries and source files.....")
     deletePackage(paths[0], paths[1], args[0])
     color.note("Downloading from github.....")
@@ -149,6 +150,11 @@ def installPackage(paths, args):
     color.success("Done!")
 
 def uninstallPackage(paths, args):
+    if '--debug' in args or '-d' in args:
+        color.isDebug = True
+    else:
+        color.isDebug = False
+
     pkg = getPackageInfo(args[0])
     color.note("Uninstalling.....")
     if not pkg['uninstallScript']:
@@ -160,7 +166,7 @@ def uninstallPackage(paths, args):
 
         color.note("Uninstall script found, running.....")
 
-        os.chdir(paths[1])
+        os.chdir(paths[0] + "/" + args[0])
         if runScript(pkg['uninstallScript'], paths[0], paths[1], args[0], pkg['binname']):
             
             color.error("Uninstall script failed! Deleting files anyways.....")
