@@ -100,6 +100,17 @@ def rmFromBin(binFolder, packagename):
 def mvBinToBin(binFolder, binFile, binName):
     os.rename(binFile, binFolder+'/'+binName)
 
+def installAptDeps(deps):
+    if 'apt' in deps:
+        for dep in deps['apt']:
+            os.system(f'sudo apt install {dep}')
+
+def installDeps(pkgname):
+    pkg = getPackageInfo(pkgname)
+    if 'deps' in pkg:
+        pkgdeps = pkg['deps']
+        installAptDeps(pkgdeps)
+
 def runScript(script, *args):
     langs = {
         'py':'python3',
