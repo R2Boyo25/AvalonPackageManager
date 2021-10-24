@@ -3,8 +3,6 @@ import sys
 
 binDir = sys.argv[2]
 
-os.system(f"rm -rf {os.path.expanduser('~/.avalonPM')}")
-
 with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
     bashrc = rbc.read()
     if binDir in bashrc:
@@ -16,3 +14,5 @@ with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
         wbc.write(nbashrc)
 
 os.remove(binDir + '/avalon')
+
+os.system(f"rm -rf {os.path.expanduser('~/.avalonPM')}")
