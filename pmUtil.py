@@ -136,6 +136,8 @@ def installPipDeps(deps):
     depss = " ".join( deps['pip'] )
     color.debug(f"pip3 install {depss}")
     os.system(f"pip3 install {depss}")
+    if os.path.exists('requirements.txt'):
+        os.system('pip3 install -r requirement.txt')
 
 def installDeps(paths, args):
     pkg = getPackageInfo(args[0])
