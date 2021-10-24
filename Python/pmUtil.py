@@ -77,6 +77,19 @@ def rmFromBin(binFolder, packagename):
 def mvBinToBin(binFolder, binFile, binName):
     os.rename(binFile, binFolder+'/'+binName)
 
+def runScript(script, *args):
+    langs = {
+        'py':'python3',
+        'sh','bash'
+    }
+
+    argss = " ".join([f"\"{arg}\"" for arg in args])
+
+    if script.split('.')[-1] in langs:
+        return os.system(f"{script.split('.')[-1]} {script} {argss}")
+    else:
+        return os.system(f'{langs["sh"]} {script} {argss}')
+
 def compilePackage(srcFolder, binFolder, packagename):
     pkg = getPackageInfo(packagename)
     os.chdir(f"{srcFolder}/{packagename}")
@@ -93,7 +106,7 @@ def compilePackage(srcFolder, binFolder, packagename):
         if pkg['compileScript']:
 
             color.note("Compile script found, compiling.....")
-            if os.system(f"bash {pkg['compileScript']} \"{srcFolder+f'/{packagename}'}\" \"{pkg['binname']}\""):
+            if runScript(pkg['compileScript'], f"\"{srcFolder+f'/{packagename}'}\" \"{pkg['binname']}\""):
 
                 error("Compile script failed!")
 
@@ -110,13 +123,13 @@ def compilePackage(srcFolder, binFolder, packagename):
         color.note("Installing.....")
         if pkg['needsCompiled'] or pkg['compileScript']:
 
-            if os.system(f"bash {pkg['installScript']} \"{binFolder+ '/' + pkg['binname']}\""):
+            if runScript(pkg['installScript'], f"\"{binFolder+ '/' + pkg['binname']}\""):
 
                 error("Install script failed!")
         
         else:
             
-            if os.system(f"bash {pkg['installScript']} \"{binFolder}\" \"{srcFolder}\" \"{packagename}\""):
+            if runScript(pkg['installScript'], f"\"{binFolder}\" \"{srcFolder}\" \"{packagename}\""):
 
                 error("Install script failed!")
 

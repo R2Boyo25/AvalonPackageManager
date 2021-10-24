@@ -1,4 +1,4 @@
 {
     "needsCompiled": false,
-    "installScript": ".avalon/install.sh"
+    "installScript": ".avalon/install.py"
 }
