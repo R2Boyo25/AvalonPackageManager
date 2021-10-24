@@ -128,6 +128,9 @@ def installAvalonDeps(paths, args, deps):
                 installPackage(paths, args)
 
 def installPipDeps(deps):
+    if os.path.exists('requirements.txt'):
+        color.not("Requirements.txt found, installing.....")
+        os.system('pip3 install -r requirement.txt')
     try:
         deps['pip']
     except:
@@ -136,8 +139,6 @@ def installPipDeps(deps):
     depss = " ".join( deps['pip'] )
     color.debug(f"pip3 install {depss}")
     os.system(f"pip3 install {depss}")
-    if os.path.exists('requirements.txt'):
-        os.system('pip3 install -r requirement.txt')
 
 def installDeps(paths, args):
     pkg = getPackageInfo(args[0])
