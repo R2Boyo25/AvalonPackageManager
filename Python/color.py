@@ -5,6 +5,7 @@ class colors:
     WARN = 3
     SUCCESS = 2
     FAIL = 1
+    DEBUG = 5
 
 def colorprint(*text, color = colors.OK):
     os.system(f"tput setaf {color}")
@@ -24,3 +25,9 @@ def note(*text):
 
 def warn(*text):
     colorprint(*text, color = colors.WARN)
+
+def debug(*text):
+    if isDebug:
+        colorprint(*text, color = colors.DEBUG)
+
+isDebug = False

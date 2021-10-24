@@ -83,11 +83,13 @@ def runScript(script, *args):
         'sh':'bash'
     }
 
-    argss = " ".join([f"\"{arg}\"" for arg in args])
+    argss = " ".join([f"{arg}" for arg in args])
 
     if script.split('.')[-1] in langs:
+        color.debug(f"{langs[script.split('.')[-1]]} {script} {argss}")
         return os.system(f"{langs[script.split('.')[-1]]} {script} {argss}")
     else:
+        color.debug(f'{langs["sh"]} {script} {argss}')
         return os.system(f'{langs["sh"]} {script} {argss}')
 
 def compilePackage(srcFolder, binFolder, packagename):
@@ -137,6 +139,10 @@ def compilePackage(srcFolder, binFolder, packagename):
         error('No installation script found.....')
 
 def installPackage(paths, args):
+    if '--debug' in args or '-d' in args:
+        color.isDebug = True
+    else:
+        color.isDebug = False
     color.note("Deleting old binaries and source files.....")
     deletePackage(paths[0], paths[1], args[0])
     color.note("Downloading from github.....")
