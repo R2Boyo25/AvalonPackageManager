@@ -102,7 +102,9 @@ def mvBinToBin(binFolder, binFile, binName):
 
 def installAptDeps(deps):
     if 'apt' in deps:
+        color.note("Found apt dependencies, installing..... (this will require your password)")
         for dep in deps['apt']:
+            color.debug(f'sudo apt install {dep}')
             os.system(f'sudo apt install {dep}')
 
 def installDeps(pkgname):
@@ -184,7 +186,9 @@ def installPackage(paths, args):
         color.note("Package is not an Avalon package, but it is in the main repository... Downloading.....")
         downloadMainRepo(paths[2])
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
-        
+    
+    installDeps(args[0])
+
     color.note("Beginning compilation/installation.....")
     compilePackage(paths[0], paths[1], args[0])
     color.success("Done!")
