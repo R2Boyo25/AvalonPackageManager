@@ -45,4 +45,4 @@ def main(args):
         helpCommand(args)
     
     elif args[0] in functions:
-        functions[args[0]]["func"]((srcpath, binpath, cachepath, configpath), args[1:])
+        functions[args[0]]["func"]((srcpath, binpath, cachepath, configpath, filepath), args[1:])
