@@ -252,7 +252,9 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
 
                 error("Compile script failed!")
 
-            mvBinToBin(binFolder, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
+            if not pkg['mvBinAfterInstallScript']:
+
+                mvBinToBin(binFolder, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
 
         else:
             error("Program needs compiling but no compilation script found... exiting.....")
@@ -265,15 +267,19 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
         color.note("Installing.....")
         if pkg['needsCompiled'] or pkg['compileScript']:
 
-            if runScript(pkg['installScript'], f"\"{binFolder+ '/' + pkg['binname']}\""):
+            if runScript(pkg['installScript'], f"\"{paths[4]+ '/' + packagename + '/' + pkg['binname']}\""):
 
                 error("Install script failed!")
         
         else:
             
-            if runScript(pkg['installScript'], f"\"{binFolder}\" \"{srcFolder}\" \"{packagename}\""):
+            if runScript(pkg['installScript'], f"\"{paths[4] + '/' + packagename}\" \"{srcFolder + '/' + packagename}\" \"{packagename}\""):
 
                 error("Install script failed!")
+
+    if pkg['mvBinAfterInstallScript']:
+
+        mvBinToBin(binFolder, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
 
     else:
         color.warn('No installation script found... Assuming installation beyond APM\'s autoinstaller isn\'t neccessary')
