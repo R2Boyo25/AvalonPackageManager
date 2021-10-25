@@ -5,6 +5,7 @@ import requests
 import os
 import shutil
 import color
+import json
 
 class e404(Exception):
     pass
@@ -22,6 +23,21 @@ def getRepos(user, cache = True):
     r = requests.request("GET", "https://api.github.com/users/"+user+"/repos").json()
 
     return r
+def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
+    if os.path.exists(f"{cacheFolder}/{pkgname}/package"):
+        with open(f"{cacheFolder}/{pkgname}/package", 'r') as pkgfile:
+            try:
+                return json.loads(pkgfile.read())
+            except:
+                return False
+    elif os.path.exists(f"{srcFolder}/{pkgname}/.avalon/package"):
+        with open(f"{srcFolder}/{pkgname}/.avalon/package", 'r') as pkgfile:
+            try:
+                return json.loads(pkgfile.read())
+            except:
+                return False
+    else:
+        return False
 
 def getRepoPackageInfo(pkgname):
     try:
@@ -36,6 +52,7 @@ def getRepoPackageInfo(pkgname):
             return r.json()
         except:
             raise e404()
+        
 
 def getMainRepoPackageInfo(pkgname):
     color.debug(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')    
@@ -45,11 +62,15 @@ def getMainRepoPackageInfo(pkgname):
     except:
         raise e404()
 
-def getPackageInfo(pkgname):
+def getPackageInfo(paths, pkgname):
     try:
-        return NPackage(getRepoPackageInfo(pkgname))
+        return NPackage(getCachedPackageInfo(paths[2], paths[0], pkgname))
     except:
-        return NPackage(getMainRepoPackageInfo(pkgname))
+        try:
+            return NPackage(getRepoPackageInfo(pkgname))
+        except:
+            return NPackage(getMainRepoPackageInfo(pkgname))
+            
 
 def isInMainRepo(pkgname):
     r = requests.get(f'https://raw.githubusercontent.com/r2boyo25/AvalonPMPackages/master/{pkgname}/package')
@@ -73,10 +94,36 @@ def moveMainRepoToAvalonFolder(cacheFolder, pkgname, srcFolder):
 
 def isAvalonPackage(repo):
     try:
-        getRepoPackageInfo(repo)
+        if not getRepoPackageInfo(repo):
+            raise e404
         return True
     except e404:
         return False
+
+def getDistro():
+    return distro.linux_distribution()[0]
+
+def distroIsSupported(pkg):
+    if pkg['distros']:
+        return getDistro() in pkg['distros']
+    else:
+        color.warn("Supported distros not specified, assuming this distro is supported.....")
+        return True
+
+def getArch():
+    return platform.machine()
+
+def archIsSupported(pkg):
+    if pkg['arches']:
+        return getArch() in pkg['arches']
+    else:
+        color.warn("Supported arches not specified, assuming this arch is supported.....")
+        return True
+
+def checkReqs(paths, pkgname):
+    pkg = getPackageInfo(paths, pkgname)
+    archIsSupported(pkg)
+    distroIsSupported(pkg)
 
 def downloadPackage(srcFolder, packageUrl, packagename = None):
     if not packagename: 
@@ -85,16 +132,16 @@ def downloadPackage(srcFolder, packageUrl, packagename = None):
     os.chdir(srcFolder)
     os.system('git clone ' + packageUrl + ' ' + packagename + " -q")
 
-def deletePackage(srcFolder, binFolder, packagename):
+def deletePackage(srcFolder, binFolder, packagename, paths):
     rmFromSrc(srcFolder, packagename)
-    rmFromBin(binFolder, packagename)
+    rmFromBin(binFolder, packagename, paths)
 
 def rmFromSrc(srcFolder, packagename):
     if os.path.exists(f"{srcFolder}/{packagename}"):
         shutil.rmtree(f"{srcFolder}/{packagename}", ignore_errors=True)
 
-def rmFromBin(binFolder, packagename):
-    pkg = getPackageInfo(packagename)
+def rmFromBin(binFolder, packagename, paths):
+    pkg = getPackageInfo(paths, packagename)
     if os.path.exists(f"{binFolder}/{pkg['binname']}"):
         os.remove(f"{binFolder}/{pkg['binname']}")
         #shutil.rmtree(f"{binFolder}/{packagename}", ignore_errors=True)
@@ -140,10 +187,10 @@ def installPipDeps(deps):
 def reqTxt(pkgname):
     if os.path.exists(pkgname + '/' + 'requirements.txt'):
         color.note("Requirements.txt found, installing.....")
-        os.system(f'pip3 install -r {pkgname}/requirements.txt')
+        os.system(f'pip3 --disable-pip-version-check install -r {pkgname}/requirements.txt')
 
 def installDeps(paths, args):
-    pkg = getPackageInfo(args[0])
+    pkg = getPackageInfo(paths, args[0])
     if pkg['deps']:
         color.note("Found dependencies, installing.....")
         pkgdeps = pkg['deps']
@@ -167,8 +214,8 @@ def runScript(script, *args):
         color.debug(f'{langs["sh"]} {script} {argss}')
         return os.system(f'{langs["sh"]} {script} {argss}')
 
-def compilePackage(srcFolder, binFolder, packagename):
-    pkg = getPackageInfo(packagename)
+def compilePackage(srcFolder, binFolder, packagename, paths):
+    pkg = getPackageInfo(paths, packagename)
     os.chdir(f"{srcFolder}/{packagename}")
 
     if pkg['needsCompiled']:
@@ -215,22 +262,25 @@ def installPackage(paths, args):
         color.isDebug = True
     else:
         color.isDebug = False
+    
+    downloadMainRepo(paths[2])
+    
+    checkReqs(args[0], paths)
 
     color.note("Deleting old binaries and source files.....")
-    deletePackage(paths[0], paths[1], args[0])
+    deletePackage(paths[0], paths[1], args[0], paths)
     color.note("Downloading from github.....")
     color.debug(paths[0], "https://github.com/" + args[0], args[0])
     downloadPackage(paths[0], "https://github.com/" + args[0], args[0])
             
     if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):
-        color.note("Package is not an Avalon package, but it is in the main repository... Downloading.....")
-        downloadMainRepo(paths[2])
+        color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
     
     installDeps(paths, args)
 
     color.note("Beginning compilation/installation.....")
-    compilePackage(paths[0], paths[1], args[0])
+    compilePackage(paths[0], paths[1], args[0], paths)
     color.success("Done!")
 
 def uninstallPackage(paths, args):
@@ -238,18 +288,21 @@ def uninstallPackage(paths, args):
         color.isDebug = True
     else:
         color.isDebug = False
+    
+    downloadMainRepo(paths[2])
+    
+    checkReqs(args[0], paths)
 
     if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):
-        color.note("Package is not an Avalon package, but it is in the main repository... Downloading.....")
-        downloadMainRepo(paths[2])
+        color.note("Package is not an Avalon package, but it is in the main repository... uninstalling from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
 
-    pkg = getPackageInfo(args[0])
+    pkg = getPackageInfo(paths, args[0])
     color.note("Uninstalling.....")
     if not pkg['uninstallScript']:
 
         color.warn("Uninstall script not found... Assuming uninstall not required and deleting files.....")
-        deletePackage(paths[0], paths[1], args[0])
+        deletePackage(paths[0], paths[1], args[0], paths)
 
     else:
 
@@ -260,6 +313,6 @@ def uninstallPackage(paths, args):
             
             color.error("Uninstall script failed! Deleting files anyways.....")
 
-        deletePackage(paths[0], paths[1], args[0])
+        deletePackage(paths[0], paths[1], args[0], paths)
     
     color.success("Successfully uninstalled package!")
