@@ -25,18 +25,21 @@ def getRepos(user, cache = True):
     return r
 def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
     if os.path.exists(f"{cacheFolder}/{pkgname}/package"):
+        color.debug("Loading from cache")
         with open(f"{cacheFolder}/{pkgname}/package", 'r') as pkgfile:
             try:
                 return json.loads(pkgfile.read())
             except:
                 return False
     elif os.path.exists(f"{srcFolder}/{pkgname}/.avalon/package"):
+        color.debug("Loading from src")
         with open(f"{srcFolder}/{pkgname}/.avalon/package", 'r') as pkgfile:
             try:
                 return json.loads(pkgfile.read())
             except:
                 return False
     else:
+        color.debug("Not cached")
         return False
 
 def getRepoPackageInfo(pkgname):
