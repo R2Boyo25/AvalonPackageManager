@@ -119,7 +119,7 @@ def getArch():
     return platform.machine()
 
 def archIsSupported(pkg):
-    color.debug(getArch, pkg['arches'])
+    color.debug(getArch(), pkg['arches'])
     if pkg['arches']:
         return getArch() in pkg['arches']
     else:
