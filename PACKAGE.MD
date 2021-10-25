@@ -5,6 +5,7 @@ In `package` in `.avalon` in the program's repo, or `package` in `user/repo` in 
     "binname": "bintobecopiedtobinfolderaftercompilation", # name of binary to be copied to ~/.avalonPM/bin/ (optional)
     "compileScript": "compile.sh", # name of script to be used to compile, run from root of repo, so if the file is in .avalon, use .avalon/compile.sh (can also be a python script) (optional)
     "installScript": "install.sh", # name of script to be used to install, run from root of repo, so if the file is in .avalon, use .avalon/install.sh (can also be a python script) (optional)
+    "mvBinAfterInstallScript": false, # if needsCompiled, moves binary after install script instead of before, default is false (optional)
     "deps": {
         "apt": [
             "packagename",
