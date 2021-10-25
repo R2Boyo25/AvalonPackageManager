@@ -173,8 +173,10 @@ def mvBinToBin(binFolder, fileFolder, binFile, binName):
 
     #with open(binFolder + binName, 'w') as f:
     #    f.write(f'#!/bin/bash\nOWD="$(pwd)"\ncd {fileFolder}\n./{binName}\ncd $OWD')
-    #st = os.stat(binFolder + binName)
-    #os.chmod(binFolder + binName, st.st_mode ^ 111)
+    #st = os.stat(binFolder + '/' + binName.split('/')[-1])
+    #os.chmod(binFolder + '/' + binName.split('/')[-1], st.st_mode ^ 111)
+
+    os.chmod(binFolder + '/' + binName.split('/')[-1], 755)
 
 def installAptDeps(deps):
     try:
