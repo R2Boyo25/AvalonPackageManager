@@ -26,7 +26,7 @@ def getRepos(user, cache = True):
     r = requests.request("GET", "https://api.github.com/users/"+user+"/repos").json()
 
     return r
-    
+
 def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
     if os.path.exists(f"{cacheFolder}/{pkgname}/package"):
         color.debug("Loading from cache")
@@ -71,7 +71,10 @@ def getMainRepoPackageInfo(pkgname):
 
 def getPackageInfo(paths, pkgname):
     try:
-        return NPackage(getCachedPackageInfo(paths[2], paths[0], pkgname))
+        if checkReqs(args[0], paths):
+            return NPackage(getCachedPackageInfo(paths[2], paths[0], pkgname))
+        else:
+            raise e404
     except:
         try:
             return NPackage(getRepoPackageInfo(pkgname))
