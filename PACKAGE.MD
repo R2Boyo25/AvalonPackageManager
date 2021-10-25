@@ -1,4 +1,4 @@
-In `package` in `.avalon` in the program's repo, or `user/repo` in my main repo, this a list of the options:
+In `package` in `.avalon` in the program's repo, or `package` in `user/repo` in my main repo, this a list of the options:
 ```json
 {
     "needsCompiled": true, # set to false if compilation not required (optional)
