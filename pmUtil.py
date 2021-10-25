@@ -170,7 +170,10 @@ def rmFromFiles(fileFolder, packagename):
         shutil.rmtree(f"{fileFolder}/{packagename}", ignore_errors=True)
 
 def mvBinToBin(binFolder, fileFolder, binFile, binName):
-    shutil.copyfile(binFile, fileFolder+'/'+binName.split('/')[-1])
+    try:
+        shutil.copyfile(binFile, fileFolder+'/'+binName.split('/')[-1])
+    except:
+        pass
     os.symlink(fileFolder+'/'+binName, binFolder + binName.split('/')[-1])
 
     #with open(binFolder + binName, 'w') as f:
@@ -281,7 +284,7 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
     if pkg['installScript']:
 
         color.note("Installing.....")
-        if pkg['needsCompiled'] or pkg['compileScript']:
+        if pkg['needsCompiled'] or pkg['compileScript'] or pkg['binname']:
 
             if runScript(pkg['installScript'], f"\"{paths[4]+ '/' + packagename + '/' + pkg['binname']}\" \"{paths[4]+packagename}\""):
 
