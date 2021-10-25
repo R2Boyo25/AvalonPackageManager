@@ -109,7 +109,7 @@ def getDistro():
     return distro.linux_distribution()[0]
 
 def distroIsSupported(pkg):
-    color.debug(getDistro, pkg['distros'])
+    color.debug(getDistro())
     if pkg['distros']:
         return getDistro() in pkg['distros']
     else:
@@ -121,7 +121,7 @@ def getArch():
 
 def archIsSupported(pkg):
     color.debug(str(pkg))
-    color.debug(getArch(), pkg['arches'])
+    color.debug(getArch())
     if pkg['arches']:
         return getArch() in pkg['arches']
     else:
@@ -291,9 +291,12 @@ def installPackage(paths, args):
 
     installDeps(paths, args)
 
-    color.note("Beginning compilation/installation.....")
-    compilePackage(paths[0], paths[1], args[0], paths)
-    color.success("Done!")
+    if not '-ni' in args:
+        color.note("Beginning compilation/installation.....")
+        compilePackage(paths[0], paths[1], args[0], paths)
+        color.success("Done!")
+    else:
+        color.warn("-ni specified, skipping installation/compilation")
 
 def uninstallPackage(paths, args):
     if '--debug' in args or '-d' in args:
