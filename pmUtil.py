@@ -168,7 +168,7 @@ def rmFromFiles(fileFolder, packagename):
         shutil.rmtree(f"{fileFolder}/{packagename}", ignore_errors=True)
 
 def mvBinToBin(binFolder, fileFolder, binFile, binName):
-    os.rename(binFile, fileFolder+'/'+binName)
+    shutil.copyfile(binFile, fileFolder+'/'+binName)
     os.symlink(fileFolder+'/'+binName, binFolder + binName)
 
     #with open(binFolder + binName, 'w') as f:
