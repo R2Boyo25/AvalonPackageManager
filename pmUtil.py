@@ -276,8 +276,6 @@ def installPackage(paths, args):
         color.isDebug = False
     
     downloadMainRepo(paths[2])
-    
-    checkReqs(args[0], paths)
 
     color.note("Deleting old binaries and source files.....")
     deletePackage(paths[0], paths[1], args[0], paths)
@@ -289,6 +287,8 @@ def installPackage(paths, args):
         color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
     
+    checkReqs(args[0], paths)
+
     installDeps(paths, args)
 
     color.note("Beginning compilation/installation.....")
@@ -302,12 +302,12 @@ def uninstallPackage(paths, args):
         color.isDebug = False
     
     downloadMainRepo(paths[2])
-    
-    checkReqs(args[0], paths)
 
     if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):
         color.note("Package is not an Avalon package, but it is in the main repository... uninstalling from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
+
+    checkReqs(args[0], paths)
 
     pkg = getPackageInfo(paths, args[0])
     color.note("Uninstalling.....")
