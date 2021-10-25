@@ -26,6 +26,7 @@ def getRepos(user, cache = True):
     r = requests.request("GET", "https://api.github.com/users/"+user+"/repos").json()
 
     return r
+    
 def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
     if os.path.exists(f"{cacheFolder}/{pkgname}/package"):
         color.debug("Loading from cache")
