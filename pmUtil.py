@@ -108,6 +108,7 @@ def getDistro():
     return distro.linux_distribution()[0]
 
 def distroIsSupported(pkg):
+    color.debug(getDistro, pkg['distros'])
     if pkg['distros']:
         return getDistro() in pkg['distros']
     else:
@@ -118,6 +119,7 @@ def getArch():
     return platform.machine()
 
 def archIsSupported(pkg):
+    color.debug(getArch, pkg['arches'])
     if pkg['arches']:
         return getArch() in pkg['arches']
     else:
