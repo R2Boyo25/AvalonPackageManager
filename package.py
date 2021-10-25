@@ -52,5 +52,4 @@ class NPackage:
         return self.idict.keys()
 
     def __str__(self):
-        print(self.idict)
         return str(self.idict)

@@ -47,35 +47,37 @@ def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
         return False
 
 def getRepoPackageInfo(pkgname):
-    try:
+
+    r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
+    color.debug(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
+    color.debug(r.text)
+    if not '404: Not Found' == r.text:
+        return r.json()
+    else:
         r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
-        try:
+        color.debug(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
+        color.debug(r.text)
+        if not'404: Not Found' == r.text:
             return r.json()
-        except:
-            raise e404()
-    except:
-        r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
-        try:
-            return r.json()
-        except:
-            raise e404()
+        else:
+            raise e404("Repo")
         
 
 def getMainRepoPackageInfo(pkgname):
-    color.debug(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')    
     r = requests.get(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')
-    try:
+    color.debug(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')    
+    color.debug(r.text)
+    if not '404: Not Found' == r.text:
         return r.json()
-    except:
-        raise e404()
+    else:
+        raise e404("Main")
 
 def getPackageInfo(paths, pkgname):
-    try:
-        if getCachedPackageInfo(paths[2], paths[0], pkgname):
-            return NPackage(getCachedPackageInfo(paths[2], paths[0], pkgname))
-        else:
-            raise e404
-    except:
+    color.debug(pkgname)
+    color.debug(str(paths))
+    if getCachedPackageInfo(paths[2], paths[0], pkgname):
+        return NPackage(getCachedPackageInfo(paths[2], paths[0], pkgname))
+    else:
         try:
             return NPackage(getRepoPackageInfo(pkgname))
         except:
@@ -292,7 +294,7 @@ def installPackage(paths, args):
         color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
     
-    checkReqs(args[0], paths)
+    checkReqs(paths, args[0])
 
     installDeps(paths, args)
 
@@ -315,7 +317,7 @@ def uninstallPackage(paths, args):
         color.note("Package is not an Avalon package, but it is in the main repository... uninstalling from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
 
-    checkReqs(args[0], paths)
+    checkReqs(paths, args[0])
 
     pkg = getPackageInfo(paths, args[0])
     color.note("Uninstalling.....")
