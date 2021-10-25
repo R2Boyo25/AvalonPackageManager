@@ -8,6 +8,7 @@ import color
 import json
 import getpass
 import platform
+import distro
 
 class e404(Exception):
     pass
