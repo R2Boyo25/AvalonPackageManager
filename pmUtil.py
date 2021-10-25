@@ -168,8 +168,8 @@ def rmFromFiles(fileFolder, packagename):
         shutil.rmtree(f"{fileFolder}/{packagename}", ignore_errors=True)
 
 def mvBinToBin(binFolder, fileFolder, binFile, binName):
-    shutil.copyfile(binFile, fileFolder+'/'+binName)
-    os.symlink(fileFolder+'/'+binName, binFolder + binName)
+    shutil.copyfile(binFile, fileFolder+'/'+binName.split('/')[-1])
+    os.symlink(fileFolder+'/'+binName, binFolder + binName.split('/')[-1])
 
     #with open(binFolder + binName, 'w') as f:
     #    f.write(f'#!/bin/bash\nOWD="$(pwd)"\ncd {fileFolder}\n./{binName}\ncd $OWD')
@@ -264,15 +264,15 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
 
                 error("Compile script failed!")
 
-            if pkg['binname'] and not pkg['mvBinAfterInstallScript']:
-            
-                mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
-
         else:
             error("Program needs compiling but no compilation script found... exiting.....")
 
     else:
         color.warn("Program does not need to be compiled, moving to installation.....")
+
+    if pkg['binname'] and not pkg['mvBinAfterInstallScript']:
+            
+        mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
 
     if pkg['installScript']:
 
