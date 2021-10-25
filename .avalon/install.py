@@ -10,12 +10,15 @@ with open(f"{binDir}/avalon", "w") as avalonStarter:
     avalonStarter.write(filecontent)
     os.system("chmod +x " + f"{binDir}/avalon")
 
-with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
-    bashrc = rbc.read()
-    if not binDir in bashrc:
-        nbashrc = f'''\nexport PATH="$PATH:{binDir}"''' + bashrc
-    else:
-        nbashrc = bashrc
+try:
+    with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
+        bashrc = rbc.read()
+        if not binDir in bashrc:
+            nbashrc = f'''\nexport PATH="$PATH:{binDir}"''' + bashrc
+        else:
+            nbashrc = bashrc
 
-    with open(os.path.expanduser('~/.bashrc'), 'w') as wbc:
-        wbc.write(nbashrc)
+        with open(os.path.expanduser('~/.bashrc'), 'w') as wbc:
+            wbc.write(nbashrc)
+except:
+    print(f"Failed to add {binDir} to PATH\nPlease add it yourself.")
