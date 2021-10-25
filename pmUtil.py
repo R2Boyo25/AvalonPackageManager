@@ -71,7 +71,7 @@ def getMainRepoPackageInfo(pkgname):
 
 def getPackageInfo(paths, pkgname):
     try:
-        if checkReqs(args[0], paths):
+        if getCachedPackageInfo(paths[2], paths[0], pkgname):
             return NPackage(getCachedPackageInfo(paths[2], paths[0], pkgname))
         else:
             raise e404
