@@ -6,6 +6,7 @@ import os
 import shutil
 import color
 import json
+import getpass
 
 class e404(Exception):
     pass
@@ -161,8 +162,12 @@ def installAptDeps(deps):
         color.note("Found apt dependencies, installing..... (this will require your password)")
         depss = " ".join( deps['apt'] )
 
-        color.debug(f'sudo apt install {depss}')
-        os.system(f'sudo apt install {depss}')
+        if getpass.getuser() not in ['root', "u0_a196"]:
+            color.debug(f'sudo apt install {depss}')
+            os.system(f'sudo apt install {depss}')
+        else:
+            color.debug(f'apt install {depss}')
+            os.system(f'apt install {depss}')
 
 def installAvalonDeps(paths, args, deps):
     try:
