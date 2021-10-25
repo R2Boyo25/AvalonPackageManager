@@ -152,6 +152,7 @@ def downloadPackage(srcFolder, packageUrl, packagename = None):
 def deletePackage(srcFolder, binFolder, packagename, paths):
     rmFromSrc(srcFolder, packagename)
     rmFromBin(binFolder, packagename, paths)
+    rmFromFiles(paths[4], packagename)
 
 def rmFromSrc(srcFolder, packagename):
     if os.path.exists(f"{srcFolder}/{packagename}"):
@@ -161,10 +162,19 @@ def rmFromBin(binFolder, packagename, paths):
     pkg = getPackageInfo(paths, packagename)
     if os.path.exists(f"{binFolder}/{pkg['binname']}"):
         os.remove(f"{binFolder}/{pkg['binname']}")
-        #shutil.rmtree(f"{binFolder}/{packagename}", ignore_errors=True)
 
-def mvBinToBin(binFolder, binFile, binName):
-    os.rename(binFile, binFolder+'/'+binName)
+def rmFromFiles(fileFolder, packagename):
+    if os.path.exists(f"{fileFolder}/{packagename}"):
+        shutil.rmtree(f"{fileFolder}/{packagename}", ignore_errors=True)
+
+def mvBinToBin(binFolder, fileFolder, binFile, binName):
+    os.rename(binFile, fileFolder+'/'+binName)
+    os.symlink(fileFolder+'/'+binName, binFolder + binName)
+
+    #with open(binFolder + binName, 'w') as f:
+    #    f.write(f'#!/bin/bash\nOWD="$(pwd)"\ncd {fileFolder}\n./{binName}\ncd $OWD')
+    #st = os.stat(binFolder + binName)
+    #os.chmod(binFolder + binName, st.st_mode ^ 111)
 
 def installAptDeps(deps):
     try:
@@ -239,6 +249,8 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
     pkg = getPackageInfo(paths, packagename)
     os.chdir(f"{srcFolder}/{packagename}")
 
+    os.makedirs(f"{paths[4]}/{packagename}")
+    
     if pkg['needsCompiled']:
 
         if not pkg['binname']:
@@ -248,11 +260,13 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
         if pkg['compileScript']:
 
             color.note("Compile script found, compiling.....")
-            if runScript(pkg['compileScript'], f"\"{srcFolder+f'/{packagename}'}\" \"{pkg['binname']}\""):
+            if runScript(pkg['compileScript'], f"\"{srcFolder+f'/{packagename}'}\" \"{pkg['binname']}\" \"{paths[4]+packagename}\""):
 
                 error("Compile script failed!")
 
-            mvBinToBin(binFolder, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
+            if pkg['binname']:
+            
+                mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
 
         else:
             error("Program needs compiling but no compilation script found... exiting.....")
@@ -265,13 +279,13 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
         color.note("Installing.....")
         if pkg['needsCompiled'] or pkg['compileScript']:
 
-            if runScript(pkg['installScript'], f"\"{binFolder+ '/' + pkg['binname']}\""):
+            if runScript(pkg['installScript'], f"\"{binFolder+ '/' + pkg['binname']}\" \"{paths[4]+packagename}\""):
 
                 error("Install script failed!")
         
         else:
             
-            if runScript(pkg['installScript'], f"\"{binFolder}\" \"{srcFolder}\" \"{packagename}\""):
+            if runScript(pkg['installScript'], f"\"{binFolder}\" \"{srcFolder}\" \"{packagename}\" \"{paths[4]+packagename}\""):
 
                 error("Install script failed!")
 
@@ -333,7 +347,7 @@ def uninstallPackage(paths, args):
         color.note("Uninstall script found, running.....")
 
         os.chdir(paths[1])
-        if runScript(paths[0] + "/" + args[0] + '/' + pkg['uninstallScript'], paths[0], paths[1], args[0], pkg['binname']):
+        if runScript(paths[0] + "/" + args[0] + '/' + pkg['uninstallScript'], paths[0], paths[1], args[0], pkg['binname'], paths[4]+args[0]):
             
             color.error("Uninstall script failed! Deleting files anyways.....")
 
