@@ -7,6 +7,7 @@ import shutil
 import color
 import json
 import getpass
+import platform
 
 class e404(Exception):
     pass
