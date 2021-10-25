@@ -138,8 +138,10 @@ def archIsSupported(pkg):
 def checkReqs(paths, pkgname):
     pkg = getPackageInfo(paths, pkgname)
     if not archIsSupported(pkg):
+        deletePackage(paths[0], paths[1], pkgname, paths)
         error(f"Arch {getArch()} not supported by package")
     if not distroIsSupported(pkg):
+        deletePackage(paths[0], paths[1], pkgname, paths)
         error(f"Distro {getDistro()} not supported by package")
 
 def downloadPackage(srcFolder, packageUrl, packagename = None):
