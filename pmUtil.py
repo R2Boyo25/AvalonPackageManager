@@ -324,7 +324,7 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
 
     if pkg['mvBinAfterInstallScript'] and pkg['binname']:
 
-        mvBinToBin(binFolder, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
+        mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
 
     else:
         color.warn('No installation script found... Assuming installation beyond APM\'s autoinstaller isn\'t neccessary')
