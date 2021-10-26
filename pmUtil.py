@@ -183,6 +183,16 @@ def mvBinToBin(binFolder, fileFolder, binFile, binName):
 
     os.chmod(binFolder + '/' + binName.split('/')[-1], 755)
 
+def copyFilesToFiles(paths, pkgname, files = ['all']):
+    if files != ['all']:
+        for file in files:
+            os.makedirs(paths[4] + '/' + pkgname + '/' + os.path.dirname(file), exist_ok=True)
+            shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
+
+    else:
+        for file in os.listdir(paths[0] + '/' + pkgname + '/'):
+            shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
+
 def installAptDeps(deps):
     try:
         deps['apt']
@@ -295,6 +305,11 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
             if runScript(pkg['installScript'], f"\"{paths[4] + '/' + packagename}\" \"{srcFolder}\" \"{packagename}\""):
 
                 error("Install script failed!")
+
+    if pkg['toCopy']:
+
+        color.note("Copying files needed by program.....")
+        copyFilesToFiles(pkg['toCopy'])
 
     if pkg['mvBinAfterInstallScript'] and pkg['binname']:
 
