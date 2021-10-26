@@ -189,14 +189,20 @@ def copyFilesToFiles(paths, pkgname, files = ['all']):
         for file in files:
             color.debug(file)
             os.makedirs(paths[4] + '/' + pkgname + '/' + os.path.dirname(file), exist_ok=True)
-            shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
+            try:
+                shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
+            except:
+                shutil.copytree(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
 
     else:
         color.debug(paths[0] + '/' + pkgname + '/')
         color.debug([i for i in os.listdir(paths[0] + '/' + pkgname + '/')])
         for file in os.listdir(paths[0] + '/' + pkgname + '/'):
             color.debug(file)
-            shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
+            try:
+                shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
+            except:
+                shutil.copytree(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
 
 def installAptDeps(deps):
     try:
