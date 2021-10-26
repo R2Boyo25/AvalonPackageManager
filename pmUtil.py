@@ -184,6 +184,7 @@ def mvBinToBin(binFolder, fileFolder, binFile, binName):
     os.chmod(binFolder + '/' + binName.split('/')[-1], 755)
 
 def copyFilesToFiles(paths, pkgname, files = ['all']):
+    color.debug(files)
     if files != ['all']:
         for file in files:
             color.debug(file)
