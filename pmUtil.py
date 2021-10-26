@@ -309,7 +309,7 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
     if pkg['toCopy']:
 
         color.note("Copying files needed by program.....")
-        copyFilesToFiles(pkg['toCopy'])
+        copyFilesToFiles(paths, packagename, pkg['toCopy'])
 
     if pkg['mvBinAfterInstallScript'] and pkg['binname']:
 
