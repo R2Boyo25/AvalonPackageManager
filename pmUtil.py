@@ -191,6 +191,8 @@ def copyFilesToFiles(paths, pkgname, files = ['all']):
             shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
 
     else:
+        color.debug(paths[0] + '/' + pkgname + '/')
+        color.debug([i for i in os.listdir(paths[0] + '/' + pkgname + '/')])
         for file in os.listdir(paths[0] + '/' + pkgname + '/'):
             color.debug(file)
             shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
