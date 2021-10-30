@@ -170,6 +170,8 @@ def rmFromFiles(fileFolder, packagename):
         shutil.rmtree(f"{fileFolder}/{packagename}", ignore_errors=True)
 
 def mvBinToBin(binFolder, fileFolder, binFile, binName):
+    #if color.isDebug:
+    #    error(str(binFolder), str(fileFolder), str(binFile), str(binName))
     try:
         shutil.copyfile(binFile, fileFolder+'/'+binName.split('/')[-1])
     except:
@@ -180,11 +182,13 @@ def mvBinToBin(binFolder, fileFolder, binFile, binName):
     #    f.write(f'#!/bin/bash\nOWD="$(pwd)"\ncd {fileFolder}\n./{binName}\ncd $OWD')
     #st = os.stat(binFolder + '/' + binName.split('/')[-1])
     #os.chmod(binFolder + '/' + binName.split('/')[-1], st.st_mode ^ 111)
-
-    os.chmod(fileFolder + '/' + binName.split('/')[-1], 755)
+    
+    #os.chmod(fileFolder + '/' + binName.split('/')[-1], 755)
+    color.debug(f"chmod +x {fileFolder + '/' + binName.split('/')[-1]}")
+    os.system(f"chmod +x {fileFolder + '/' + binName.split('/')[-1]}")
 
 def copyFilesToFiles(paths, pkgname, files = ['all']):
-    color.debug(files)
+    color.debug(str(files))
     if files != ['all']:
         for file in files:
             color.debug(file)
