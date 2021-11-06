@@ -234,8 +234,10 @@ def installAvalonDeps(paths, args, deps):
         color.note("Found avalon dependencies, installing.....")
         for dep in deps['avalon']:
             if not os.path.exists(paths[0] + dep) or '--update' in args or '-U' in args:
+                color.note("Installing", dep)
                 args[0] = dep
                 installPackage(paths, args)
+                color.note("Installed", dep)
 
 def installPipDeps(deps):
     try:
