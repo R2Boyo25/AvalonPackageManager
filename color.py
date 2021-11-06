@@ -8,11 +8,13 @@ class colors:
     DEBUG = 5
 
 def colorprint(*text, color = colors.OK):
-    os.system(f"tput setaf {color}")
+    if not issilent:
+        
+        os.system(f"tput setaf {color}")
 
-    print(" ".join(text))
+        print(" ".join(text))
 
-    os.system("tput sgr0")
+        os.system("tput sgr0")
 
 def success(*text):
     colorprint(*text, color = colors.SUCCESS)
@@ -29,5 +31,19 @@ def warn(*text):
 def debug(*text):
     if isDebug:
         colorprint(*text, color = colors.DEBUG)
+
+def silent(toset = None):
+    global issilent
+
+    if toset is None:
+
+        issilent = not issilent
+    
+    else:
+
+        issilent = toset
+
+
+issilent = False
 
 isDebug = False
