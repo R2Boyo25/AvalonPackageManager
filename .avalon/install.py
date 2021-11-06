@@ -6,11 +6,16 @@ try:
     filesFolder = sys.argv[2]
     binDir = sys.argv[3]
     srcDir = sys.argv[4]
+
+    switched = False
 except:
     binDir = sys.argv[1]
     srcDir = sys.argv[2]
     binf = 'apm'
     filesFolder = srcDir
+
+    switched = True
+
 #pkgName = sys.argv[3]
 
 with open(binf, "w") as avalonStarter:
@@ -30,3 +35,6 @@ try:
             wbc.write(nbashrc)
 except:
     print(f"Failed to add {binDir} to PATH\nPlease add it yourself.")
+
+if switched:
+    print("The command to run avalon has been switched to apm, please use that now.")
