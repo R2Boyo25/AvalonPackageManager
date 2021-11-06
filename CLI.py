@@ -27,7 +27,7 @@ def helpCommand(args):
         print(functions[args[0]]['help'])
 
 def genPackage(*args):
-    os.system('avalongen ' + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+    os.system(binpath + '/avalongen ' + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
 
 functions = {
     "install":{
