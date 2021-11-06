@@ -1,5 +1,6 @@
 {
-    "needsCompiled": false,
+    "binname": "avalon",
+    "mvBinAfterInstallScript": true,
     "installScript": ".avalon/install.py",
     "uninstallScript": ".avalon/uninstall.py",
     "deps": {
