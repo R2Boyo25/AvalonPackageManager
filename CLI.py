@@ -26,7 +26,7 @@ def helpCommand(args):
     else:
         print(functions[args[0]]['help'])
 
-def genPackage():
+def genPackage(*args):
     os.system('avalongen ' + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
 
 functions = {
