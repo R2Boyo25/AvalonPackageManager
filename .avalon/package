@@ -3,7 +3,7 @@
     "mvBinAfterInstallScript": true,
     "toCopy": [
         "all"
-    ]
+    ],
     "installScript": ".avalon/install.py",
     "uninstallScript": ".avalon/uninstall.py",
     "deps": {
