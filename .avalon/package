@@ -2,4 +2,9 @@
     "needsCompiled": false,
     "installScript": ".avalon/install.py",
     "uninstallScript": ".avalon/uninstall.py"
+    "deps": {
+        "avalon": [
+            "R2Boyo25/AvalonGen"
+        ]
+    }
 }

@@ -26,14 +26,21 @@ def helpCommand(args):
     else:
         print(functions[args[0]]['help'])
 
+def genPackage():
+    os.system('avalongen ' + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+
 functions = {
     "install":{
-            "help":"Installs a package",
-            "func":installPackage
-        },
+        "help":"Installs a package",
+        "func":installPackage
+    },
     "uninstall":{
-            "help":"Uninstalls a package",
-            "func":uninstallPackage
+        "help":"Uninstalls a package",
+        "func":uninstallPackage
+    },
+    "gen": {
+        "help": "Generates a package",
+        "func": genPackage
     }
 }
 
