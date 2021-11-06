@@ -1,5 +1,5 @@
 {
-    "binname": "avalon",
+    "binname": "apm",
     "mvBinAfterInstallScript": true,
     "toCopy": [
         "all"

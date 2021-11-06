@@ -315,7 +315,7 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
         color.note("Installing.....")
         if pkg['needsCompiled'] or pkg['compileScript'] or pkg['binname']:
 
-            if runScript(pkg['installScript'], f"\"{paths[4]+ '/' + packagename + '/' + pkg['binname']}\" \"{paths[4]+packagename}\""):
+            if runScript(pkg['installScript'], f"\"{paths[4]+ '/' + packagename + '/' + pkg['binname']}\" \"{paths[4]+packagename}\" \"{binFolder}\" \"{srcFolder}\""):
 
                 error("Install script failed!")
         
