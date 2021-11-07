@@ -218,11 +218,11 @@ def installAptDeps(deps):
         depss = " ".join( deps['apt'] )
 
         if getpass.getuser() not in ['root', "u0_a196"]:
-            color.debug(f'sudo apt install {depss}')
-            os.system(f'sudo apt install {depss}')
+            color.debug(f'sudo apt install -y {depss}')
+            os.system(f'sudo apt install -y {depss}')
         else:
-            color.debug(f'apt install {depss}')
-            os.system(f'apt install {depss}')
+            color.debug(f'apt install -y {depss}')
+            os.system(f'apt install -y {depss}')
 
 def installAvalonDeps(paths, args, deps):
     try:
