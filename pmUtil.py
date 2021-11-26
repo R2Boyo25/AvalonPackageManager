@@ -10,6 +10,8 @@ import getpass
 import platform
 import distro
 
+import case.case
+
 class e404(Exception):
     pass
 
@@ -27,16 +29,22 @@ def getRepos(user, cache = True):
 
     return r
 
-def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
-    if os.path.exists(f"{cacheFolder}/{pkgname}/package"):
-        color.debug("Loading from cache")
-        with open(f"{cacheFolder}/{pkgname}/package", 'r') as pkgfile:
+def getCachedPackageMainRepoInfo(cacheFolder, srcFolder, pkgname):
+    color.debug(f"{cacheFolder}/{pkgname}/package")
+    color.debug(case.case.getCaseInsensitivePath(f"{cacheFolder}/{pkgname}/package"))
+    if os.path.exists(case.case.getCaseInsensitivePath(f"{cacheFolder}/{pkgname}/package")):
+        color.debug("Loading from main repo cache")
+        with open(case.case.getCaseInsensitivePath(f"{cacheFolder}/{pkgname}/package"), 'r') as pkgfile:
             try:
                 return json.loads(pkgfile.read())
             except Exception as e:
                 color.debug(pkgfile.read())
                 raise e
-    elif os.path.exists(f"{srcFolder}/{pkgname}/.avalon/package"):
+    else:
+        return False
+
+def getCachedPackageRepoInfo(cacheFolder, srcFolder, pkgname):
+    if os.path.exists(f"{srcFolder}/{pkgname}/.avalon/package"):
         color.debug("Loading from src;", f"{srcFolder}/{pkgname}/.avalon/package")
         with open(f"{srcFolder}/{pkgname}/.avalon/package", 'r') as pkgfile:
             try:
@@ -45,11 +53,18 @@ def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
                 color.debug("Content: " + pkgfile.read())
                 raise e
     else:
+        return False
+
+def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
+    if getCachedPackageMainRepoInfo(cacheFolder, srcFolder, pkgname):
+        return getCachedPackageMainRepoInfo(cacheFolder, srcFolder, pkgname)
+    elif getCachedPackageRepoInfo(cacheFolder, srcFolder, pkgname):
+        return getCachedPackageRepoInfo(cacheFolder, srcFolder, pkgname)
+    else:
         color.debug("Not cached")
         return False
 
 def getRepoPackageInfo(pkgname):
-
     r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
     color.debug(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
     color.debug(r.text)
@@ -86,12 +101,12 @@ def getPackageInfo(paths, pkgname):
             return NPackage(getMainRepoPackageInfo(pkgname))
             
 
-def isInMainRepo(pkgname):
-    r = requests.get(f'https://raw.githubusercontent.com/r2boyo25/AvalonPMPackages/master/{pkgname}/package')
-    try:
-        r.json()
+def isInMainRepo(pkgname, paths):
+    if getCachedPackageMainRepoInfo(paths[2], paths[0], pkgname):
+        color.debug("Found in main repo cache")
         return True
-    except:
+    else:
+        color.debug("Not found in main repo cache")
         return False
 
 def downloadMainRepo(cacheDir):
@@ -99,12 +114,14 @@ def downloadMainRepo(cacheDir):
     color.debug(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
     os.system(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
     
-def moveMainRepoToAvalonFolder(cacheFolder, pkgname, srcFolder):
+def moveMainRepoToAvalonFolder(cacheFolder, pkgname, srcFolder, paths):
+    color.debug(pkgname)
+    color.debug("Moving to .avalon folder")
     color.debug(srcFolder + "/" + pkgname + "/.avalon")
     shutil.rmtree(srcFolder + "/" + pkgname + "/.avalon", ignore_errors = True)
-    if isInMainRepo(pkgname):
-        color.debug(cacheFolder + "/" + pkgname, srcFolder + "/" + pkgname + '/.avalon')
-        shutil.copytree(cacheFolder + "/" + pkgname, srcFolder + "/" + pkgname + '/.avalon')
+    if isInMainRepo(pkgname, paths):
+        color.debug(case.case.getCaseInsensitivePath(cacheFolder + "/" + pkgname), srcFolder + "/" + pkgname + '/.avalon')
+        shutil.copytree(case.case.getCaseInsensitivePath(cacheFolder + "/" + pkgname), srcFolder + "/" + pkgname + '/.avalon')
 
 def isAvalonPackage(repo):
     try:
@@ -398,9 +415,11 @@ def installPackage(paths, args):
     color.debug(paths[0], "https://github.com/" + args[0], args[0])
     downloadPackage(paths[0], "https://github.com/" + args[0], args[0])
             
-    if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):
+    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0]):
         color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")
-        moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
+        moveMainRepoToAvalonFolder(paths[2], args[0], paths[0], paths)
+    else:
+        color.debug("Not in the main repo")
     
     checkReqs(paths, args[0])
 
