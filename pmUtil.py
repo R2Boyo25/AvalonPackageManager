@@ -33,15 +33,17 @@ def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
         with open(f"{cacheFolder}/{pkgname}/package", 'r') as pkgfile:
             try:
                 return json.loads(pkgfile.read())
-            except:
-                return False
+            except Exception as e:
+                color.debug(pkgfile.read())
+                raise e
     elif os.path.exists(f"{srcFolder}/{pkgname}/.avalon/package"):
-        color.debug("Loading from src")
+        color.debug("Loading from src;", f"{srcFolder}/{pkgname}/.avalon/package")
         with open(f"{srcFolder}/{pkgname}/.avalon/package", 'r') as pkgfile:
             try:
                 return json.loads(pkgfile.read())
-            except:
-                return False
+            except Exception as e:
+                color.debug("Content: " + pkgfile.read())
+                raise e
     else:
         color.debug("Not cached")
         return False
@@ -51,13 +53,13 @@ def getRepoPackageInfo(pkgname):
     r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
     color.debug(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
     color.debug(r.text)
-    if not '404: Not Found' == r.text:
+    if not "404" in r.text:
         return r.json()
     else:
         r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
         color.debug(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
         color.debug(r.text)
-        if not'404: Not Found' == r.text:
+        if not "404" in r.text:
             return r.json()
         else:
             raise e404("Repo")
@@ -67,7 +69,7 @@ def getMainRepoPackageInfo(pkgname):
     r = requests.get(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')
     color.debug(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')    
     color.debug(r.text)
-    if not '404: Not Found' == r.text:
+    if not "404" in r.text:
         return r.json()
     else:
         raise e404("Main")
@@ -151,17 +153,21 @@ def downloadPackage(srcFolder, packageUrl, packagename = None):
     os.chdir(srcFolder)
     os.system('git clone --depth 1 ' + packageUrl + ' ' + packagename + " -q")
 
-def deletePackage(srcFolder, binFolder, packagename, paths):
+def deletePackage(srcFolder, binFolder, packagename, paths, cfg = None):
     rmFromSrc(srcFolder, packagename)
-    rmFromBin(binFolder, packagename, paths)
+    if cfg:
+        rmFromBin(binFolder, packagename, paths, cfg)
+    else:
+        rmFromBin(binFolder, packagename, paths)
     rmFromFiles(paths[4], packagename)
 
 def rmFromSrc(srcFolder, packagename):
     if os.path.exists(f"{srcFolder}/{packagename}"):
         shutil.rmtree(f"{srcFolder}/{packagename}", ignore_errors=True)
 
-def rmFromBin(binFolder, packagename, paths):
-    pkg = getPackageInfo(paths, packagename)
+def rmFromBin(binFolder, packagename, paths, pkg = None):
+    if not pkg:
+        pkg = getPackageInfo(paths, packagename)
     if os.path.exists(f"{binFolder}/{pkg['binname']}"):
         os.remove(f"{binFolder}/{pkg['binname']}")
 
@@ -337,11 +343,50 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
     else:
         color.warn('No installation script found... Assuming installation beyond APM\'s autoinstaller isn\'t neccessary')
 
+def installLocalPackage(paths, args):
+    tmppath = paths[5]
+    if '--debug' in args or '-d' in args:
+        color.isDebug = True
+    else:
+        color.isDebug = False
+
+    color.note("Unpacking package.....")
+    color.debug(f"tar -xf {args[0]} -C {tmppath}")
+    os.system(f"tar -xf {args[0]} -C {tmppath}")
+    cfgfile = json.load(open(f"{tmppath}/.avalon/package", "r"))
+    try:
+        args[0] = (cfgfile["author"] + "/" + cfgfile["repo"]).lower()
+    except:
+        error("Package's package file need 'author' and 'repo'")
+
+    color.note("Deleting old binaries and source files.....")
+    deletePackage(paths[0], paths[1], args[0], paths, cfgfile)
+
+    color.note("Copying package files....")
+    color.debug(f"mkdir -p {paths[0]}/{args[0]}")
+    os.system(f"mkdir -p {paths[0]}/{args[0]}")
+    color.debug(f"cp -a {tmppath}/. {paths[0]}/{args[0]}")
+    os.system(f"cp -a {tmppath}/. {paths[0]}/{args[0]}")
+    shutil.rmtree(tmppath)
+    
+    checkReqs(paths, args[0])
+
+    installDeps(paths, args)
+
+    if not '-ni' in args:
+        color.note("Beginning compilation/installation.....")
+        compilePackage(paths[0], paths[1], args[0], paths)
+        color.success("Done!")
+    else:
+        color.warn("-ni specified, skipping installation/compilation")
+
 def installPackage(paths, args):
     if '--debug' in args or '-d' in args:
         color.isDebug = True
     else:
         color.isDebug = False
+
+    args[0] = args[0].lower()
     
     downloadMainRepo(paths[2])
 
@@ -372,6 +417,8 @@ def uninstallPackage(paths, args):
     else:
         color.isDebug = False
     
+    args[0] = args[0].lower()
+
     downloadMainRepo(paths[2])
 
     if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):

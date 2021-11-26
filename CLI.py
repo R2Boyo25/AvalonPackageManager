@@ -38,6 +38,10 @@ functions = {
         "help":"Uninstalls a package",
         "func":uninstallPackage
     },
+    "installf": {
+        "help": "Installs package from file",
+        "func": installLocalPackage
+    },
     "gen": {
         "help": "Generates a package",
         "func": genPackage
@@ -52,4 +56,4 @@ def main(args):
         helpCommand(args)
     
     elif args[0] in functions:
-        functions[args[0]]["func"]((srcpath, binpath, cachepath, configpath, filepath), args[1:])
+        functions[args[0]]["func"]((srcpath, binpath, cachepath, configpath, filepath, tmppath), args[1:])
