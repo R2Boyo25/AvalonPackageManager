@@ -206,7 +206,7 @@ def copyFilesToFiles(paths, pkgname, files = ['all']):
 
     else:
         color.debug(paths[0] + '/' + pkgname + '/')
-        color.debug([i for i in os.listdir(paths[0] + '/' + pkgname + '/')])
+        color.debug(" ".join([i for i in os.listdir(paths[0] + '/' + pkgname + '/')]))
         for file in os.listdir(paths[0] + '/' + pkgname + '/'):
             color.debug(file)
             try:
@@ -257,10 +257,12 @@ def installPipDeps(deps):
     color.debug(f"pip3 install {depss}")
     os.system(f"pip3 install {depss}")
 
-def reqTxt(pkgname):
-    if os.path.exists(pkgname + '/' + 'requirements.txt'):
+def reqTxt(pkgname, paths):
+    color.debug(paths[0] + "/" + pkgname + '/' + 'requirements.txt')
+    color.debug(os.curdir)
+    if os.path.exists(paths[0] + "/" + pkgname + '/' + 'requirements.txt'):
         color.note("Requirements.txt found, installing.....")
-        os.system(f'pip3 --disable-pip-version-check install -r {pkgname}/requirements.txt')
+        os.system(f'pip3 --disable-pip-version-check install -r {paths[0]}/{pkgname}/requirements.txt')
 
 def installDeps(paths, args):
     pkg = getPackageInfo(paths, args[0])
@@ -270,7 +272,7 @@ def installDeps(paths, args):
         installAptDeps(pkgdeps)
         installAvalonDeps(paths, args, pkgdeps)
         installPipDeps(pkgdeps)
-    reqTxt(args[0])
+    reqTxt(args[0], paths)
 
 def runScript(script, *args):
     langs = {
