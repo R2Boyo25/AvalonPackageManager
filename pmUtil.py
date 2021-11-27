@@ -64,21 +64,38 @@ def getCachedPackageInfo(cacheFolder, srcFolder, pkgname):
         color.debug("Not cached")
         return False
 
-def getRepoPackageInfo(pkgname):
-    r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
-    color.debug(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
-    color.debug(r.text)
-    if not "404" in r.text:
-        return r.json()
-    else:
-        r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
-        color.debug(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
+def getRepoPackageInfo(pkgname, commit = None, branch = None):
+    if not branch and not commit:
+        r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
+        color.debug(f'https://raw.githubusercontent.com/{pkgname}/master/.avalon/package')
         color.debug(r.text)
         if not "404" in r.text:
             return r.json()
         else:
-            raise e404("Repo")
-        
+            r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
+            color.debug(f'https://raw.githubusercontent.com/{pkgname}/main/.avalon/package')
+            color.debug(r.text)
+            if not "404" in r.text:
+                return r.json()
+            else:
+                raise e404("Repo")
+    else:
+        if branch:
+            r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/{branch}/.avalon/package')
+            color.debug(f'https://raw.githubusercontent.com/{pkgname}/{branch}/.avalon/package')
+            color.debug(r.text)
+            if not "404" in r.text:
+                return r.json()
+            else:
+                raise e404("Branch")
+        elif commit:
+            r = requests.get(f'https://raw.githubusercontent.com/{pkgname}/{commit}/.avalon/package')
+            color.debug(f'https://raw.githubusercontent.com/{pkgname}/{commit}/.avalon/package')
+            color.debug(r.text)
+            if not "404" in r.text:
+                return r.json()
+            else:
+                raise e404("Branch")
 
 def getMainRepoPackageInfo(pkgname):
     r = requests.get(f'https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package')
@@ -89,14 +106,14 @@ def getMainRepoPackageInfo(pkgname):
     else:
         raise e404("Main")
 
-def getPackageInfo(paths, pkgname):
+def getPackageInfo(paths, pkgname, commit = None, branch = None):
     color.debug(pkgname)
     color.debug(str(paths))
     if getCachedPackageInfo(paths[2], paths[0], pkgname):
         return NPackage(getCachedPackageInfo(paths[2], paths[0], pkgname))
     else:
         try:
-            return NPackage(getRepoPackageInfo(pkgname))
+            return NPackage(getRepoPackageInfo(pkgname, commit = commit, branch = branch))
         except:
             return NPackage(getMainRepoPackageInfo(pkgname))
             
@@ -124,12 +141,10 @@ def moveMainRepoToAvalonFolder(cacheFolder, pkgname, srcFolder, paths):
         shutil.copytree(case.case.getCaseInsensitivePath(cacheFolder + "/" + pkgname), srcFolder + "/" + pkgname + '/.avalon')
 
 def isAvalonPackage(repo):
-    try:
-        if not getRepoPackageInfo(repo):
-            raise e404
-        return True
-    except e404:
+    if not getCachedPackageRepoInfo(repo):
         return False
+    else:
+        return True
 
 def getDistro():
     return distro.linux_distribution()[0]
@@ -163,28 +178,39 @@ def checkReqs(paths, pkgname):
         deletePackage(paths[0], paths[1], pkgname, paths)
         error(f"Distro {getDistro()} not supported by package")
 
-def downloadPackage(srcFolder, packageUrl, packagename = None):
+def downloadPackage(srcFolder, packageUrl, packagename = None, branch = None, commit = None):
     if not packagename: 
         packagename = packageUrl.lstrip("https://github.com/")
     color.debug(packagename)
     os.chdir(srcFolder)
-    os.system('git clone --depth 1 ' + packageUrl + ' ' + packagename + " -q")
+    if commit and branch:
+        os.system('git clone ' + packageUrl + ' ' + packagename + " -q")
+        os.system(f"cd {packagename}; git reset --hard {commit}")
+    elif branch:
+        packagename = "/".join(packagename.split(":")[:-1])
+        os.system('git clone --depth 1 ' + packageUrl + ' ' + packagename + " -q -b " + branch)
+    elif commit:
+        os.system('git clone ' + packageUrl + ' ' + packagename + " -q")
+        os.system(f"cd {packagename}; git reset --hard {commit}")
+    else:
+        os.system('git clone --depth 1 ' + packageUrl + ' ' + packagename + " -q")
 
-def deletePackage(srcFolder, binFolder, packagename, paths, cfg = None):
+def deletePackage(srcFolder, binFolder, packagename, paths, cfg = None, commit = None, branch = None):
     rmFromSrc(srcFolder, packagename)
     if cfg:
-        rmFromBin(binFolder, packagename, paths, cfg)
+        rmFromBin(binFolder, packagename, paths, cfg, branch = branch, commit = commit)
     else:
-        rmFromBin(binFolder, packagename, paths)
+        rmFromBin(binFolder, packagename, paths, branch = branch, commit = commit)
     rmFromFiles(paths[4], packagename)
 
 def rmFromSrc(srcFolder, packagename):
     if os.path.exists(f"{srcFolder}/{packagename}"):
         shutil.rmtree(f"{srcFolder}/{packagename}", ignore_errors=True)
 
-def rmFromBin(binFolder, packagename, paths, pkg = None):
+def rmFromBin(binFolder, packagename, paths, pkg = None, commit = None, branch = None):
+    color.debug("RMBIN:", packagename)
     if not pkg:
-        pkg = getPackageInfo(paths, packagename)
+        pkg = getPackageInfo(paths, packagename, commit, branch)
     if os.path.exists(f"{binFolder}/{pkg['binname']}"):
         os.remove(f"{binFolder}/{pkg['binname']}")
 
@@ -409,11 +435,32 @@ def installPackage(paths, args):
     
     downloadMainRepo(paths[2])
 
+    packagename = args[0]
+
+    if ":" in packagename:
+        branch = None
+        commit = packagename.split(":")[-1]
+        packagename = packagename.split(":")[0]
+    elif packagename.count("/") > 1:
+        branch = packagename.split("/")[-1]
+        packagename = "/".join(packagename.split(":")[:-1])
+        commit = None
+    elif ( ":" in packagename ) and ( packagename.count("/") > 1 ):
+        commit = packagename.split(":")[-1]
+        packagename = packagename.split(":")[0]
+        branch = packagename.split("/")[-1]
+        packagename = "/".join(packagename.split(":")[:-1])
+    else:
+        branch = None
+        commit = None
+    
+    args[0] = packagename
+
     color.note("Deleting old binaries and source files.....")
-    deletePackage(paths[0], paths[1], args[0], paths)
+    deletePackage(paths[0], paths[1], args[0], paths, branch = branch, commit = commit)
     color.note("Downloading from github.....")
     color.debug(paths[0], "https://github.com/" + args[0], args[0])
-    downloadPackage(paths[0], "https://github.com/" + args[0], args[0])
+    downloadPackage(paths[0], "https://github.com/" + args[0], args[0], branch = branch, commit = commit)
             
     if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0]):
         color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")

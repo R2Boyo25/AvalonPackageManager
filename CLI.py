@@ -52,7 +52,7 @@ def main(args):
     if len(args) == 0:
         return
     
-    elif args[0] == "--help" or args[0] == "-h":
+    elif args[0] == "--help" or args[0] == "-h" or args[0] == "help":
         helpCommand(args)
     
     elif args[0] in functions:
