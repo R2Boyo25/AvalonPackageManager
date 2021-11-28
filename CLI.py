@@ -29,6 +29,13 @@ def helpCommand(args):
 def genPackage(*args):
     os.system(binpath + '/avalongen ' + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
 
+def genAPM(*args):
+    os.system(binpath + '/avalongen ' + "apm " + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+
+def unpackAPM(*args):
+    raise NotImplementedError
+    os.system(binpath + '/avalongen ' + "unpack " + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+
 functions = {
     "install":{
         "help":"Installs a package",
@@ -45,6 +52,14 @@ functions = {
     "gen": {
         "help": "Generates a package",
         "func": genPackage
+    },
+    "pack": {
+        "help": "Package a package into a .apm package",
+        "func": genAPM
+    },
+    "unpack": {
+        "help": "Unpack a .apm package",
+        "func": unpackAPM
     }
 }
 
