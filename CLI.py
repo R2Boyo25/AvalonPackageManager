@@ -1,59 +1,39 @@
-import requests, json
-from os import path
-import os, sys
+import os
+import sys
 
-from package import Package
-from pmUtil import *
-from path import *
-from cfg import *
+from pmUtil import installPackage, uninstallPackage, installLocalPackage
+from path import binpath, srcpath, cachepath, configpath, tmppath, filepath
+from CLIParse import Parse
+from version import version
 
-def getLongest(things):
-    longestThing = 0
-    for thing in things:
-        if len(thing) > longestThing:
-            longestThing = len(thing)
-    return longestThing
+before = f"Avalon Package Manager V{version}"
 
-def getPadded(thing, longest):
-    padamount = ( longest ) - len(thing)
-    return thing + ( " " * padamount )
+p = Parse("apm", before = before)
 
-def helpCommand(args):
-    if len(args) == 1:
-        longest = getLongest(functions)
-        for func in functions:
-            print(getPadded(func, longest), ":", functions[func]['help'])
-    else:
-        print(functions[args[0]]['help'])
+p.flag("update", short = "U", long = "update", help = "Reinstall APM dependencies")
+p.flag("noinstall", long = "noinstall", help = "Only download, skip compilation and installation (Debug)")
+p.flag("debug", short = "d", long = "debug", help = "Print debug output (VERY large amount of text)")
 
-def genPackage(*args):
+@p.command("gen")
+def genPackage(flags, paths, *args):
+    'Generate a package using AvalonGen'
     os.system(binpath + '/avalongen ' + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
 
-functions = {
-    "install":{
-        "help":"Installs a package",
-        "func":installPackage
-    },
-    "uninstall":{
-        "help":"Uninstalls a package",
-        "func":uninstallPackage
-    },
-    "installf": {
-        "help": "Installs package from file",
-        "func": installLocalPackage
-    },
-    "gen": {
-        "help": "Generates a package",
-        "func": genPackage
-    }
-}
+@p.command('install')
+def installFunction(flags, paths, *args):
+    'Installs a package'
+    installPackage(flags, paths, list(args))
 
-def main(args):
-    if len(args) == 0:
-        return
-    
-    elif args[0] == "--help" or args[0] == "-h":
-        helpCommand(args)
-    
-    elif args[0] in functions:
-        functions[args[0]]["func"]((srcpath, binpath, cachepath, configpath, filepath, tmppath), args[1:])
+@p.command('uninstall')
+def uninstallFunction(flags, paths, *args):
+    'Uninstalls a package'
+    uninstallPackage(flags, paths, list(args))
+
+@p.command('installf')
+def installFileFunction(flags, paths, *args):
+    'Installs a package from a .apm file or .tar.gz archive'
+    installLocalPackage(flags, paths, list(args))
+
+def main():
+
+    p.run(extras = [srcpath, binpath, cachepath, configpath, filepath, tmppath])

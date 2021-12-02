@@ -223,9 +223,9 @@ def copyFilesToFiles(paths, pkgname, files = ['all']):
 
     else:
         color.debug(paths[0] + '/' + pkgname + '/')
-        color.debug(" ".join([i for i in os.listdir(paths[0] + '/' + pkgname + '/')]))
+        #color.debug(" ".join([i for i in os.listdir(paths[0] + '/' + pkgname + '/')]))
         for file in os.listdir(paths[0] + '/' + pkgname + '/'):
-            color.debug(file)
+            #color.debug(file)
             try:
                 shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
             except:
@@ -247,7 +247,7 @@ def installAptDeps(deps):
             color.debug(f'apt install -y {depss}')
             os.system(f'apt install -y {depss}')
 
-def installAvalonDeps(paths, args, deps):
+def installAvalonDeps(flags, paths, args, deps):
     try:
         deps['avalon']
     except:
@@ -256,11 +256,11 @@ def installAvalonDeps(paths, args, deps):
     if deps['avalon']:
         color.note("Found avalon dependencies, installing.....")
         for dep in deps['avalon']:
-            if not os.path.exists(paths[0] + dep) or '--update' in args or '-U' in args:
+            if not os.path.exists(paths[0] + dep) or flags.update:
                 color.note("Installing", dep)
                 color.silent()
                 args[0] = dep
-                installPackage(paths, args)
+                installPackage(flags, paths, args)
                 color.silent()
                 color.note("Installed", dep)
 
@@ -281,13 +281,13 @@ def reqTxt(pkgname, paths):
         color.note("Requirements.txt found, installing.....")
         os.system(f'pip3 --disable-pip-version-check install -r {paths[0]}/{pkgname}/requirements.txt')
 
-def installDeps(paths, args):
+def installDeps(flags, paths, args):
     pkg = getPackageInfo(paths, args[0])
     if pkg['deps']:
         color.note("Found dependencies, installing.....")
         pkgdeps = pkg['deps']
         installAptDeps(pkgdeps)
-        installAvalonDeps(paths, args, pkgdeps)
+        installAvalonDeps(flags, paths, args, pkgdeps)
         installPipDeps(pkgdeps)
     reqTxt(args[0], paths)
 
@@ -362,12 +362,10 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
     else:
         color.warn('No installation script found... Assuming installation beyond APM\'s autoinstaller isn\'t neccessary')
 
-def installLocalPackage(paths, args):
+def installLocalPackage(flags, paths, args):
     tmppath = paths[5]
-    if '--debug' in args or '-d' in args:
-        color.isDebug = True
-    else:
-        color.isDebug = False
+
+    color.isDebug = flags.debug
 
     color.note("Unpacking package.....")
     color.debug(f"tar -xf {args[0]} -C {tmppath}")
@@ -390,20 +388,17 @@ def installLocalPackage(paths, args):
     
     checkReqs(paths, args[0])
 
-    installDeps(paths, args)
+    installDeps(flags, paths, args)
 
-    if not '-ni' in args:
+    if not flags.noinstall:
         color.note("Beginning compilation/installation.....")
         compilePackage(paths[0], paths[1], args[0], paths)
         color.success("Done!")
     else:
         color.warn("-ni specified, skipping installation/compilation")
 
-def installPackage(paths, args):
-    if '--debug' in args or '-d' in args:
-        color.isDebug = True
-    else:
-        color.isDebug = False
+def installPackage(flags, paths, args):
+    color.isDebug = flags.debug
 
     args[0] = args[0].lower()
     
@@ -423,28 +418,26 @@ def installPackage(paths, args):
     
     checkReqs(paths, args[0])
 
-    installDeps(paths, args)
+    installDeps(flags, paths, args)
 
-    if not '-ni' in args:
+    if not flags.noinstall:
         color.note("Beginning compilation/installation.....")
         compilePackage(paths[0], paths[1], args[0], paths)
         color.success("Done!")
     else:
         color.warn("-ni specified, skipping installation/compilation")
 
-def uninstallPackage(paths, args):
-    if '--debug' in args or '-d' in args:
-        color.isDebug = True
-    else:
-        color.isDebug = False
+def uninstallPackage(flags, paths, args):
+
+    color.isDebug = flags.debug
     
     args[0] = args[0].lower()
 
     downloadMainRepo(paths[2])
 
-    if isInMainRepo(args[0]) and not isAvalonPackage(args[0]):
+    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0]):
         color.note("Package is not an Avalon package, but it is in the main repository... uninstalling from there.....")
-        moveMainRepoToAvalonFolder(paths[2], args[0], paths[0])
+        moveMainRepoToAvalonFolder(paths[2], args[0], paths[0], paths)
 
     checkReqs(paths, args[0])
 

@@ -31,7 +31,7 @@ class Package:
         if not hasattr(self, 'curiter'):
             self.curiter = 0
         
-        curkey = __iter__()[self.curiter]
+        curkey = self.__iter__()[self.curiter]
         self.curiter += 1
         return curkey, self.__getAttr__()[curkey]
 

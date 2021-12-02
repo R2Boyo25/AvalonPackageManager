@@ -1,6 +1,6 @@
 from config.config import Config
 from config.cache import Cache
-from path import *
+from path import configpath, cachepath, srcpath, binpath
 
 try:
     config = Config(configpath + '/config.json')
