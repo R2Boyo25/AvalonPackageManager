@@ -4,9 +4,9 @@ import sys
 from pmUtil import installPackage, uninstallPackage, installLocalPackage
 from path import binpath, srcpath, cachepath, configpath, tmppath, filepath
 from CLIParse import Parse
-from version import version
+from version import version, cyear
 
-before = f"Avalon Package Manager V{version}"
+before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
 
 p = Parse("apm", before = before)
 
