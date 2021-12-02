@@ -34,6 +34,17 @@ def installFileFunction(flags, paths, *args):
     'Installs a package from a .apm file or .tar.gz archive'
     installLocalPackage(flags, paths, list(args))
 
+@p.command("pack")
+def genAPM(*args):
+    'Generate .apm file with AvalonGen'
+    os.system(binpath + '/avalongen ' + "apm " + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+
+@p.command("unpack")
+def unpackAPM(*args):
+    'Unpack .apm file with AvalonGen'
+    raise NotImplementedError
+    #os.system(binpath + '/avalongen ' + "unpack " + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+
 def main():
 
     p.run(extras = [srcpath, binpath, cachepath, configpath, filepath, tmppath])
