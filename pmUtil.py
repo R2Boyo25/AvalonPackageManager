@@ -395,7 +395,8 @@ def installLocalPackage(flags, paths, args):
 
     color.note("Unpacking package.....")
     color.debug(f"tar -xf {args[0]} -C {tmppath}")
-    os.system(f"tar -xf {args[0]} -C {tmppath}")
+    if os.system(f"tar -xf {args[0]} -C {tmppath}"):
+        error("Error unpacking package, not a tar.gz file, or doesn't exist")
     cfgfile = json.load(open(f"{tmppath}/.avalon/package", "r"))
     try:
         args[0] = (cfgfile["author"] + "/" + cfgfile["repo"]).lower()
@@ -407,9 +408,11 @@ def installLocalPackage(flags, paths, args):
 
     color.note("Copying package files....")
     color.debug(f"mkdir -p {paths[0]}/{args[0]}")
-    os.system(f"mkdir -p {paths[0]}/{args[0]}")
+    if os.system(f"mkdir -p {paths[0]}/{args[0]}"):
+        error("Failed to make src folder")
     color.debug(f"cp -a {tmppath}/. {paths[0]}/{args[0]}")
-    os.system(f"cp -a {tmppath}/. {paths[0]}/{args[0]}")
+    if os.system(f"cp -a {tmppath}/. {paths[0]}/{args[0]}"):
+        error("Failed to copy files from temp folder to src folder")
     shutil.rmtree(tmppath)
     
     checkReqs(paths, args[0])
