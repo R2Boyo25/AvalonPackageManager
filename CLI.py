@@ -11,6 +11,7 @@ before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
 p = Parse("apm", before = before)
 
 p.flag("update", short = "U", long = "update", help = "Reinstall APM dependencies")
+p.flag("fromfile", short = "f", long = "file", help = "Install from file")
 p.flag("noinstall", long = "noinstall", help = "Only download, skip compilation and installation (Debug)")
 p.flag("debug", short = "d", long = "debug", help = "Print debug output (VERY large amount of text)")
 
@@ -29,10 +30,10 @@ def uninstallFunction(flags, paths, *args):
     'Uninstalls a package'
     uninstallPackage(flags, paths, list(args))
 
-@p.command('installf')
-def installFileFunction(flags, paths, *args):
-    'Installs a package from a .apm file or .tar.gz archive'
-    installLocalPackage(flags, paths, list(args))
+#@p.command('installf')
+#def installFileFunction(flags, paths, *args):
+#    'Installs a package from a .apm file or .tar.gz archive'
+#    installLocalPackage(flags, paths, list(args))
 
 @p.command("pack")
 def genAPM(*args):
