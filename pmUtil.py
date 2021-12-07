@@ -282,7 +282,7 @@ def installAvalonDeps(flags, paths, args, deps):
     if deps['avalon']:
         color.note("Found avalon dependencies, installing.....")
         for dep in deps['avalon']:
-            if not os.path.exists(paths[0] + dep) or flags.update:
+            if not os.path.exists(paths[0] + dep.lower()) or flags.update:
                 color.note("Installing", dep)
                 color.silent()
                 args[0] = dep
@@ -394,9 +394,17 @@ def installLocalPackage(flags, paths, args):
     color.isDebug = flags.debug
 
     color.note("Unpacking package.....")
-    color.debug(f"tar -xf {args[0]} -C {tmppath}")
-    if os.system(f"tar -xf {args[0]} -C {tmppath}"):
-        error("Error unpacking package, not a tar.gz file, or doesn't exist")
+    if not os.path.exists(args[0]):
+        error(f"{args[0]} does not exist")
+    elif os.path.isdir(args[0]):
+        color.debug(f"cp -r {args[0]}/./ {tmppath}")
+        if os.system(f"cp -r {args[0]}/./ {tmppath}"):
+            error("Failed to copy files")
+    else:
+        color.debug(f"tar -xf {args[0]} -C {tmppath}")
+        if os.system(f"tar -xf {args[0]} -C {tmppath}"):
+            error("Error unpacking package, not a tar.gz file")
+
     cfgfile = json.load(open(f"{tmppath}/.avalon/package", "r"))
     try:
         args[0] = (cfgfile["author"] + "/" + cfgfile["repo"]).lower()

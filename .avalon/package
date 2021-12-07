@@ -1,4 +1,6 @@
 {
+    "author": "R2Boyo25",
+    "repo": "AvalonPackageManager",
     "binname": "apm",
     "mvBinAfterInstallScript": true,
     "toCopy": [
