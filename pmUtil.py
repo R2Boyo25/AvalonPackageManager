@@ -140,8 +140,8 @@ def moveMainRepoToAvalonFolder(cacheFolder, pkgname, srcFolder, paths):
         color.debug(case.case.getCaseInsensitivePath(cacheFolder + "/" + pkgname), srcFolder + "/" + pkgname + '/.avalon')
         shutil.copytree(case.case.getCaseInsensitivePath(cacheFolder + "/" + pkgname), srcFolder + "/" + pkgname + '/.avalon')
 
-def isAvalonPackage(repo):
-    if not getCachedPackageRepoInfo(repo):
+def isAvalonPackage(repo, srcFolder, pkgname):
+    if not getCachedPackageRepoInfo(repo, srcFolder, pkgname):
         return False
     else:
         return True
@@ -274,6 +274,24 @@ def installAptDeps(deps):
             color.debug(f'apt install -y {depss}')
             os.system(f'apt install -y {depss}')
 
+def installBuildDepDeps(deps):
+    try:
+        deps['build-dep']
+    except:
+        return
+    if deps['build-dep']:
+        color.note("Found build-dep (apt) dependencies, installing..... (this will require your password)")
+        depss = " ".join( deps['build-dep'] )
+
+        if getpass.getuser() not in ['root', "u0_a196"]:
+            color.debug(f'sudo apt build-dep -y {depss}')
+            if os.system(f'sudo apt build-dep -y {depss}'):
+                error("apt error")
+        else:
+            color.debug(f'apt build-dep -y {depss}')
+            if os.system(f'apt build-dep -y {depss}'):
+                error("apt error")
+
 def installAvalonDeps(flags, paths, args, deps):
     try:
         deps['avalon']
@@ -314,6 +332,7 @@ def installDeps(flags, paths, args):
         color.note("Found dependencies, installing.....")
         pkgdeps = pkg['deps']
         installAptDeps(pkgdeps)
+        installBuildDepDeps(pkgdeps)
         installAvalonDeps(flags, paths, args, pkgdeps)
         installPipDeps(pkgdeps)
     reqTxt(args[0], paths)
@@ -359,8 +378,13 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
         color.warn("Program does not need to be compiled, moving to installation.....")
 
     if pkg['binname'] and not pkg['mvBinAfterInstallScript']:
-            
-        mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
+        if pkg['binfile']:
+
+            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binfile'], pkg['binname'])
+        
+        else:
+
+            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
 
     if pkg['installScript']:
 
@@ -383,8 +407,13 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
         copyFilesToFiles(paths, packagename, pkg['toCopy'])
 
     if pkg['mvBinAfterInstallScript'] and pkg['binname']:
+        if pkg['binfile']:
 
-        mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
+            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binfile'], pkg['binname'])
+        
+        else:
+
+            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
 
     else:
         color.warn('No installation script found... Assuming installation beyond APM\'s autoinstaller isn\'t neccessary')
@@ -473,7 +502,7 @@ def installPackage(flags, paths, args):
     color.debug(paths[0], "https://github.com/" + args[0], args[0])
     downloadPackage(paths[0], "https://github.com/" + args[0], args[0], branch = branch, commit = commit)
             
-    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0]):
+    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0], paths[0], args[0]):
         color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0], paths)
     else:
@@ -498,7 +527,7 @@ def uninstallPackage(flags, paths, args):
 
     downloadMainRepo(paths[2])
 
-    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0]):
+    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0], paths[0], args[0]):
         color.note("Package is not an Avalon package, but it is in the main repository... uninstalling from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0], paths)
 
