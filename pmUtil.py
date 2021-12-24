@@ -211,22 +211,26 @@ def rmFromBin(binFolder, packagename, paths, pkg = None, commit = None, branch =
     color.debug("RMBIN:", packagename)
     if not pkg:
         pkg = getPackageInfo(paths, packagename, commit, branch)
+    color.debug(f"{binFolder}/{pkg['binname']}")
     if 'binname' in pkg.keys():
         if os.path.exists(f"{binFolder}/{pkg['binname']}"):
+            color.debug("Deleting", f"{binFolder}/{pkg['binname']}")
             os.remove(f"{binFolder}/{pkg['binname']}")
 
 def rmFromFiles(fileFolder, packagename):
     if os.path.exists(f"{fileFolder}/{packagename}"):
         shutil.rmtree(f"{fileFolder}/{packagename}", ignore_errors=True)
 
-def mvBinToBin(binFolder, fileFolder, binFile, binName):
+def mvBinToBin(binFolder, fileFolder, srcFolder, binFile, binName):
     #if color.isDebug:
     #    error(str(binFolder), str(fileFolder), str(binFile), str(binName))
     try:
-        shutil.copyfile(binFile, fileFolder+'/'+binName.split('/')[-1])
+        shutil.copyfile(srcFolder + "/" + binFile, fileFolder+'/'+binName.split('/')[-1])
     except:
         pass
-    os.symlink(fileFolder+'/'+binName, binFolder + binName.split('/')[-1])
+    
+    #os.symlink(fileFolder+'/'+binName, binFolder + binName.split('/')[-1])
+    os.symlink(fileFolder+'/'+binFile, binFolder + binName.split('/')[-1])
 
     #with open(binFolder + binName, 'w') as f:
     #    f.write(f'#!/bin/bash\nOWD="$(pwd)"\ncd {fileFolder}\n./{binName}\ncd $OWD')
@@ -234,8 +238,10 @@ def mvBinToBin(binFolder, fileFolder, binFile, binName):
     #os.chmod(binFolder + '/' + binName.split('/')[-1], st.st_mode ^ 111)
     
     #os.chmod(fileFolder + '/' + binName.split('/')[-1], 755)
-    color.debug(f"chmod +x {fileFolder + '/' + binName.split('/')[-1]}")
-    os.system(f"chmod +x {fileFolder + '/' + binName.split('/')[-1]}")
+    #color.debug(f"chmod +x {fileFolder + '/' + binName.split('/')[-1]}")
+    #os.system(f"chmod +x {fileFolder + '/' + binName.split('/')[-1]}")
+    color.debug(f"chmod +x {fileFolder + '/' + binFile}")
+    os.system(f"chmod +x {fileFolder + '/' + binFile}")
 
 def copyFilesToFiles(paths, pkgname, files = ['all']):
     color.debug(str(files))
@@ -352,7 +358,7 @@ def runScript(script, *args):
         color.debug(f'{langs["sh"]} {script} {argss}')
         return os.system(f'{langs["sh"]} {script} {argss}')
 
-def compilePackage(srcFolder, binFolder, packagename, paths):
+def compilePackage(srcFolder, binFolder, packagename, paths, flags):
     pkg = getPackageInfo(paths, packagename)
     os.chdir(f"{srcFolder}/{packagename}")
 
@@ -380,11 +386,11 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
     if pkg['binname'] and not pkg['mvBinAfterInstallScript']:
         if pkg['binfile']:
 
-            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binfile'], pkg['binname'])
+            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/", pkg['binfile'], pkg['binname'])
         
         else:
 
-            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
+            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/", pkg['binname'], pkg['binname'])
 
     if pkg['installScript']:
 
@@ -409,11 +415,11 @@ def compilePackage(srcFolder, binFolder, packagename, paths):
     if pkg['mvBinAfterInstallScript'] and pkg['binname']:
         if pkg['binfile']:
 
-            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binfile'], pkg['binname'])
+            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/", pkg['binfile'], pkg['binname'])
         
         else:
 
-            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/" + pkg['binname'], pkg['binname'])
+            mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/", pkg['binname'], pkg['binname'])
 
     else:
         color.warn('No installation script found... Assuming installation beyond APM\'s autoinstaller isn\'t neccessary')
@@ -459,7 +465,7 @@ def installLocalPackage(flags, paths, args):
 
     if not flags.noinstall:
         color.note("Beginning compilation/installation.....")
-        compilePackage(paths[0], paths[1], args[0], paths)
+        compilePackage(paths[0], paths[1], args[0], paths, flags)
         color.success("Done!")
     else:
         color.warn("-ni specified, skipping installation/compilation")
@@ -514,10 +520,33 @@ def installPackage(flags, paths, args):
 
     if not flags.noinstall:
         color.note("Beginning compilation/installation.....")
-        compilePackage(paths[0], paths[1], args[0], paths)
+        compilePackage(paths[0], paths[1], args[0], paths, flags)
         color.success("Done!")
     else:
         color.warn("-ni specified, skipping installation/compilation")
+
+def redoBin(flags, paths, *args):
+    "Redo making of symlinks without recompiling program"
+    args = list(args)
+
+    color.isDebug = flags.debug
+
+    args[0] = args[0].lower()
+
+    packagename = args[0]
+    binFolder = paths[1]
+    srcFolder = paths[0]
+    pkg = getPackageInfo(paths, packagename)
+    color.debug(packagename, binFolder, srcFolder, str(pkg))
+    rmFromBin(binFolder, packagename, paths, pkg = pkg)
+
+    if pkg['binfile']:
+
+        mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/", pkg['binfile'], pkg['binname'])
+        
+    else:
+
+        mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/", pkg['binname'], pkg['binname'])
 
 def uninstallPackage(flags, paths, args):
 

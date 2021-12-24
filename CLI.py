@@ -1,7 +1,7 @@
 import os
 import sys
 
-from pmUtil import installPackage, uninstallPackage, installLocalPackage
+from pmUtil import installPackage, uninstallPackage, installLocalPackage, redoBin
 from path import binpath, srcpath, cachepath, configpath, tmppath, filepath
 from CLIParse import Parse
 from version import version, cyear
@@ -45,6 +45,10 @@ def unpackAPM(*args):
     'Unpack .apm file with AvalonGen'
     raise NotImplementedError
     #os.system(binpath + '/avalongen ' + "unpack " + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+
+@p.command("redobin", hidden = True)
+def redoBinCopy(*args):
+    redoBin(*args)
 
 def main():
 
