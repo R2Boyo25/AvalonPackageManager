@@ -211,8 +211,8 @@ def rmFromBin(binFolder, packagename, paths, pkg = None, commit = None, branch =
     color.debug("RMBIN:", packagename)
     if not pkg:
         pkg = getPackageInfo(paths, packagename, commit, branch)
-    color.debug(f"{binFolder}/{pkg['binname']}")
     if 'binname' in pkg.keys():
+        color.debug(f"{binFolder}/{pkg['binname']}")
         if os.path.exists(f"{binFolder}/{pkg['binname']}"):
             color.debug("Deleting", f"{binFolder}/{pkg['binname']}")
             os.remove(f"{binFolder}/{pkg['binname']}")
