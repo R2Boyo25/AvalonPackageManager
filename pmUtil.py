@@ -370,7 +370,7 @@ def reqTxt(pkgname, paths):
     color.debug(os.curdir)
     if os.path.exists(paths[0] + "/" + pkgname + '/' + 'requirements.txt'):
         color.note("Requirements.txt found, installing.....")
-        os.system(f'pip3 --disable-pip-version-check install -r {paths[0]}/{pkgname}/requirements.txt')
+        os.system(f'pip3 --disable-pip-version-check -q install -r {paths[0]}/{pkgname}/requirements.txt')
 
 def installDeps(flags, paths, args):
     pkg = getPackageInfo(paths, args[0])
@@ -517,8 +517,12 @@ def installLocalPackage(flags, paths, args):
         color.warn("-ni specified, skipping installation/compilation")
 
 def installPackage(flags, paths, args):
-    if os.path.exists(args[0]) or flags.fromfile:
+    if os.path.exists(args[0]) or flags:
         installLocalPackage(flags, paths, args)
+        quit()
+    
+    if os.path.exists(f"{paths[0]}/{args[0].lower()}") and not flags.fresh:
+        updatePackage(flags, paths, *args)
         quit()
 
     color.isDebug = flags.debug
@@ -576,9 +580,12 @@ def updatePackage(flags, paths, *args):
 
     args = list(args)
 
-    if not os.path.exists(f"{paths[0]}/{args[0].lower()}"):
-        installPackage(flags, paths, args)
-        quit()
+    #if len(args) == 0:
+    #    args.append("r2boyo25/avalonpackagemanager")
+
+    #if not os.path.exists(f"{paths[0]}/{args[0].lower()}"):
+    #    installPackage(flags, paths, args)
+    #    quit()
 
     color.isDebug = flags.debug
 

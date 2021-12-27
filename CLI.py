@@ -11,9 +11,10 @@ before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
 p = Parse("apm", before = before)
 
 p.flag("update", short = "U", long = "update", help = "Reinstall APM dependencies")
-p.flag("fromfile", short = "f", long = "file", help = "Install from file")
+p.flag("fresh", short = "f", long = "fresh", help = "Reinstall instead of updating")
 p.flag("noinstall", long = "noinstall", help = "Only download, skip compilation and installation (Debug)")
 p.flag("debug", short = "d", long = "debug", help = "Print debug output (VERY large amount of text)")
+
 
 @p.command("gen")
 def genPackage(flags, paths, *args):
@@ -30,7 +31,7 @@ def uninstallFunction(flags, paths, *args):
     'Uninstalls a package'
     uninstallPackage(flags, paths, list(args))
 
-@p.command("update")
+@p.command("update", hidden = True)
 def updatePackageCLI(*args):
     "Update to newest version of a repo, then recompile + reinstall program"
     updatePackage(*args)

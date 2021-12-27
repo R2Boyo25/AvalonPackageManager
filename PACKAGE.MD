@@ -1,6 +1,8 @@
 In `package` in `.avalon` in the program's repo, or `package` in `user/repo` in my main repo, this a list of the options:
 ```json
 {
+    "author": "R2Boyo25", # name of the author of the repo (required for installing from local)
+    "repo": "AvalonPackageManager" # name of the repo (required for installing from local)
     "needsCompiled": true, # set to false if compilation not required (optional)
     "binname": "bintobecopiedtobinfolderaftercompilation", # name of binary to be copied to ~/.avalonPM/bin/ (optional)
     "compileScript": "compile.sh", # name of script to be used to compile, run from root of repo, so if the file is in .avalon, use .avalon/compile.sh (can also be a python script) (optional)
