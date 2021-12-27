@@ -179,8 +179,8 @@ def isInMainRepo(pkgname, paths):
 def downloadMainRepo(cacheDir):
     #shutil.rmtree(cacheDir)
     if os.path.exists(f"{cacheDir}/R2Boyo25"):
-        color.debug(f"cd {cacheDir}; git pull")
-        os.system(f"cd {cacheDir}; git pull")
+        color.debug(f"cd {cacheDir}; git pull -q")
+        os.system(f"cd {cacheDir}; git pull -q")
     else:
         color.debug(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
         os.system(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
