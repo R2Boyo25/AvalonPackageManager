@@ -388,6 +388,9 @@ def compilePackage(srcFolder, binFolder, packagename, paths, flags):
         color.warn("Program does not need to be compiled, moving to installation.....")
 
     if pkg['binname'] and not pkg['mvBinAfterInstallScript']:
+
+        rmFromBin(binFolder, packagename, paths)
+
         if pkg['binfile']:
 
             mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/", pkg['binfile'], pkg['binname'])
@@ -417,6 +420,9 @@ def compilePackage(srcFolder, binFolder, packagename, paths, flags):
         copyFilesToFiles(paths, packagename, pkg['toCopy'])
 
     if pkg['mvBinAfterInstallScript'] and pkg['binname']:
+
+        rmFromBin(binFolder, packagename, paths)
+
         if pkg['binfile']:
 
             mvBinToBin(binFolder, paths[4]+packagename, srcFolder + "/" + packagename + "/", pkg['binfile'], pkg['binname'])
@@ -544,9 +550,9 @@ def updatePackage(flags, paths, *args):
 
     packagename = args[0]
 
-    color.note("Deleting old binaries and source files.....")
+    #color.note("Deleting old binaries and source files.....")
     #deletePackage(paths[0], paths[1], args[0], paths, branch = branch, commit = commit)
-    rmFromBin(paths[1], packagename, paths)
+    #rmFromBin(paths[1], packagename, paths)
 
     color.note("Pulling from github.....")
     #color.debug(paths[0], "https://github.com/" + args[0], args[0])
