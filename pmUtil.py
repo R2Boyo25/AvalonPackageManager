@@ -534,6 +534,10 @@ def updatePackage(flags, paths, *args):
 
     args = list(args)
 
+    if not os.path.exists(f"{paths[0]}/{args[0].lower()}"):
+        installPackage(flags, paths, args)
+        quit()
+
     color.isDebug = flags.debug
 
     args[0] = args[0].lower()

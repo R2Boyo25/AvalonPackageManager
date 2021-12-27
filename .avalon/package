@@ -10,7 +10,8 @@
     "uninstallScript": ".avalon/uninstall.py",
     "deps": {
         "avalon": [
-            "R2Boyo25/AvalonGen"
+            "R2Boyo25/AvalonGen",
+            "R2Boyo25/CLIParse"
         ]
     }
 }
