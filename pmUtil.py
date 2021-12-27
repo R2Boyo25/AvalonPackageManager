@@ -177,9 +177,13 @@ def isInMainRepo(pkgname, paths):
         return False
 
 def downloadMainRepo(cacheDir):
-    shutil.rmtree(cacheDir)
-    color.debug(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
-    os.system(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
+    #shutil.rmtree(cacheDir)
+    if os.path.exists(f"{cacheDir}/R2Boyo25"):
+        color.debug(f"cd {cacheDir}; git pull")
+        os.system(f"cd {cacheDir}; git pull")
+    else:
+        color.debug(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
+        os.system(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
     
 def moveMainRepoToAvalonFolder(cacheFolder, pkgname, srcFolder, paths):
     color.debug(pkgname)
@@ -586,6 +590,8 @@ def updatePackage(flags, paths, *args):
     #if not os.path.exists(f"{paths[0]}/{args[0].lower()}"):
     #    installPackage(flags, paths, args)
     #    quit()
+
+    downloadMainRepo(paths[2])
 
     color.isDebug = flags.debug
 
