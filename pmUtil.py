@@ -273,7 +273,9 @@ def installAptDeps(deps):
         color.note("Found apt dependencies, installing..... (this will require your password)")
         depss = " ".join( deps['apt'] )
 
-        if getpass.getuser() not in ['root', "u0_a196"]:
+        username = getpass.getuser()
+
+        if username != 'root' and not username.startswith("u0_a"):
             color.debug(f'sudo apt install -y {depss}')
             os.system(f'sudo apt install -y {depss}')
         else:
