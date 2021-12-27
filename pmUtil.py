@@ -517,7 +517,7 @@ def installLocalPackage(flags, paths, args):
         color.warn("-ni specified, skipping installation/compilation")
 
 def installPackage(flags, paths, args):
-    if os.path.exists(args[0]) or flags:
+    if os.path.exists(args[0]):
         installLocalPackage(flags, paths, args)
         quit()
     
