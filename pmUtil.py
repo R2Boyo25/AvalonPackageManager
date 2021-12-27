@@ -599,7 +599,8 @@ def updatePackage(flags, paths, *args):
     #color.debug(paths[0], "https://github.com/" + args[0], args[0])
 
     if os.system(f"cd {paths[0]}/{args[0]}; git pull"):
-        error("Git error")
+        if os.system(f"cd {paths[0]}/{args[0]}; git reset --hard; git pull"):
+            error("Git error")
 
     #downloadPackage(paths[0], "https://github.com/" + args[0], args[0], branch = branch, commit = commit)
             
