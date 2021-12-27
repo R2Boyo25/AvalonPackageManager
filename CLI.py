@@ -1,7 +1,7 @@
 import os
 import sys
 
-from pmUtil import installPackage, uninstallPackage, installLocalPackage, redoBin, updatePackage, installed, dlSrc
+from pmUtil import installPackage, uninstallPackage, installLocalPackage, redoBin, updatePackage, installed, dlSrc, updateCache
 from path import binpath, srcpath, cachepath, configpath, tmppath, filepath
 from CLIParse import Parse
 from version import version, cyear
@@ -35,6 +35,12 @@ def uninstallFunction(flags, paths, *args):
 def updatePackageCLI(*args):
     "Update to newest version of a repo, then recompile + reinstall program"
     updatePackage(*args)
+
+@p.command("refresh")
+def refreshCacheFolder(*args):
+    "Refresh main repo cache"
+
+    updateCache(*args)
 
 #@p.command('installf')
 #def installFileFunction(flags, paths, *args):

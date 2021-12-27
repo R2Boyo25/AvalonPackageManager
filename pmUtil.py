@@ -179,8 +179,8 @@ def isInMainRepo(pkgname, paths):
 def downloadMainRepo(cacheDir):
     #shutil.rmtree(cacheDir)
     if os.path.exists(f"{cacheDir}/R2Boyo25"):
-        color.debug(f"cd {cacheDir}; git pull -q")
-        os.system(f"cd {cacheDir}; git pull -q")
+        color.debug(f"cd {cacheDir}; git pull")
+        os.system(f"cd {cacheDir}; git pull")
     else:
         color.debug(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
         os.system(f"git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages \"{cacheDir}\" -q")
@@ -333,7 +333,9 @@ def installBuildDepDeps(deps):
         color.note("Found build-dep (apt) dependencies, installing..... (this will require your password)")
         depss = " ".join( deps['build-dep'] )
 
-        if getpass.getuser() not in ['root', "u0_a196"]:
+        username = getpass.getuser()
+
+        if username != 'root' and not username.startswith("u0_a"):
             color.debug(f'sudo apt build-dep -y {depss}')
             if os.system(f'sudo apt build-dep -y {depss}'):
                 error("apt error")
@@ -533,7 +535,8 @@ def installPackage(flags, paths, args):
 
     args[0] = args[0].lower()
     
-    downloadMainRepo(paths[2])
+    if not os.path.exists(f"{paths[2]}/R2Boyo25"):
+        downloadMainRepo(paths[2])
 
     packagename = args[0]
 
@@ -591,7 +594,8 @@ def updatePackage(flags, paths, *args):
     #    installPackage(flags, paths, args)
     #    quit()
 
-    downloadMainRepo(paths[2])
+    if not os.path.exists(f"{paths[2]}/R2Boyo25"):
+        downloadMainRepo(paths[2])
 
     color.isDebug = flags.debug
 
@@ -610,7 +614,7 @@ def updatePackage(flags, paths, *args):
 
     #downloadPackage(paths[0], "https://github.com/" + args[0], args[0], branch = branch, commit = commit)
             
-    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0], paths[0], args[0]):
+    if isInMainRepo(args[0], paths):
         color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0], paths)
     else:
@@ -656,7 +660,8 @@ def uninstallPackage(flags, paths, args):
     
     args[0] = args[0].lower()
 
-    downloadMainRepo(paths[2])
+    if not os.path.exists(f"{paths[2]}/R2Boyo25"):
+        downloadMainRepo(paths[2])
 
     if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0], paths[0], args[0]):
         color.note("Package is not an Avalon package, but it is in the main repository... uninstalling from there.....")
@@ -700,3 +705,8 @@ def dlSrc(flags, paths, *args):
         os.system(f"git clone https://github.com/{args[0].lower()} {args[1]}")
     else:
         os.system("git pull")
+
+def updateCache(flags, paths, *args):
+    "Update cache"
+
+    downloadMainRepo(paths[2])
