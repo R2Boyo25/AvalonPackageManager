@@ -43,6 +43,42 @@ def getRepos(user, cache = True):
 
     return r
 
+def getInstalledRepos(paths):
+    "Gett all installed programs"
+    programs = []
+
+    for user in os.listdir(paths[0]):
+        for repo in os.listdir(paths[0] + "/" + user):
+            programs.append(f"{user}/{repo}")
+
+    return programs
+
+def getVersion(paths, repo):
+    "Get version of package"
+
+    pkg = getCachedPackageRepoInfo(paths[2], paths[0], repo)
+
+    if pkg:
+        if 'version' in pkg:
+            return pkg["version"]
+        else:
+            return False
+    else:
+        return False
+
+def getInstalled(paths):
+    "Get all installed programs with versions"
+    programs = []
+
+    for repo in getInstalledRepos(paths):
+        v = getVersion(paths, repo)
+        if v:
+            programs.append(f"{repo}=={v}")
+        else:
+            programs.append(repo)
+    
+    return programs
+
 def getCachedPackageMainRepoInfo(cacheFolder, srcFolder, pkgname):
     color.debug(f"{cacheFolder}/{pkgname}/package")
     color.debug(case.case.getCaseInsensitivePath(f"{cacheFolder}/{pkgname}/package"))
@@ -548,8 +584,6 @@ def updatePackage(flags, paths, *args):
 
     args[0] = args[0].lower()
 
-    packagename = args[0]
-
     #color.note("Deleting old binaries and source files.....")
     #deletePackage(paths[0], paths[1], args[0], paths, branch = branch, commit = commit)
     #rmFromBin(paths[1], packagename, paths)
@@ -635,3 +669,20 @@ def uninstallPackage(flags, paths, args):
         deletePackage(paths[0], paths[1], args[0], paths)
     
     color.success("Successfully uninstalled package!")
+
+def installed(flags, paths, *args):
+    "List installed packages"
+
+    color.isDebug = flags.debug
+
+    print("\n".join(getInstalled(paths)).title())
+
+def dlSrc(flags, paths, *args):
+    "Download repo into folder"
+
+    if len(args) == 1:
+        os.system(f"git clone https://github.com/{args[0].lower()}")
+    elif len(args) == 2:
+        os.system(f"git clone https://github.com/{args[0].lower()} {args[1]}")
+    else:
+        os.system("git pull")

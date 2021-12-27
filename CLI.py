@@ -1,7 +1,7 @@
 import os
 import sys
 
-from pmUtil import installPackage, uninstallPackage, installLocalPackage, redoBin, updatePackage
+from pmUtil import installPackage, uninstallPackage, installLocalPackage, redoBin, updatePackage, installed, dlSrc
 from path import binpath, srcpath, cachepath, configpath, tmppath, filepath
 from CLIParse import Parse
 from version import version, cyear
@@ -54,6 +54,18 @@ def unpackAPM(*args):
 @p.command("redobin", hidden = True)
 def redoBinCopy(*args):
     redoBin(*args)
+
+@p.command("installed")
+def listInstalled(*args):
+    "List installed packages"
+
+    installed(*args)
+
+@p.command("src")
+def dlSrcCli(*args):
+    "Download repo into folder"
+
+    dlSrc(*args)
 
 def main():
 
