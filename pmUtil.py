@@ -580,8 +580,8 @@ def updatePackage(flags, paths, *args):
 
     args = list(args)
 
-    #if len(args) == 0:
-    #    args.append("r2boyo25/avalonpackagemanager")
+    if len(args) == 0:
+        args.append("r2boyo25/avalonpackagemanager")
 
     #if not os.path.exists(f"{paths[0]}/{args[0].lower()}"):
     #    installPackage(flags, paths, args)
