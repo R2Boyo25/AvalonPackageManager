@@ -9,6 +9,7 @@ import json
 import getpass
 import platform
 import distro
+import filecmp
 
 import case.case
 
@@ -18,6 +19,19 @@ class e404(Exception):
 def error(*text):
     color.error(*text)
     quit()
+
+def copyFile(src, dst):
+    "Copy a file only if files are not the same or the destination does not exist"
+    if not os.path.dirname(dst).strip() == "":
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+
+    if os.path.isfile(src):
+        if not os.path.exists(dst) or not filecmp.cmp(src, dst):
+            shutil.copy2(src, dst)
+    else:
+        if os.path.exists(src):
+            for file in os.listdir(src):
+                copyFile(src + "/" + file, dst + "/" + file)
 
 def getRepos(user, cache = True):
     if cache:
@@ -247,22 +261,10 @@ def copyFilesToFiles(paths, pkgname, files = ['all']):
     color.debug(str(files))
     if files != ['all']:
         for file in files:
-            color.debug(file)
-            os.makedirs(paths[4] + '/' + pkgname + '/' + os.path.dirname(file), exist_ok=True)
-            try:
-                shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
-            except:
-                shutil.copytree(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
-
+            copyFile(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
     else:
-        color.debug(paths[0] + '/' + pkgname + '/')
-        #color.debug(" ".join([i for i in os.listdir(paths[0] + '/' + pkgname + '/')]))
         for file in os.listdir(paths[0] + '/' + pkgname + '/'):
-            #color.debug(file)
-            try:
-                shutil.copy2(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
-            except:
-                shutil.copytree(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
+            copyFile(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
 
 def installAptDeps(deps):
     try:
@@ -364,7 +366,7 @@ def compilePackage(srcFolder, binFolder, packagename, paths, flags):
     pkg = getPackageInfo(paths, packagename)
     os.chdir(f"{srcFolder}/{packagename}")
 
-    os.makedirs(f"{paths[4]}/{packagename}")
+    os.makedirs(f"{paths[4]}/{packagename}", exist_ok = True)
     
     if pkg['needsCompiled']:
 
@@ -509,6 +511,46 @@ def installPackage(flags, paths, args):
     color.note("Downloading from github.....")
     color.debug(paths[0], "https://github.com/" + args[0], args[0])
     downloadPackage(paths[0], "https://github.com/" + args[0], args[0], branch = branch, commit = commit)
+            
+    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0], paths[0], args[0]):
+        color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")
+        moveMainRepoToAvalonFolder(paths[2], args[0], paths[0], paths)
+    else:
+        color.debug("Not in the main repo")
+    
+    checkReqs(paths, args[0])
+
+    installDeps(flags, paths, args)
+
+    if not flags.noinstall:
+        color.note("Beginning compilation/installation.....")
+        compilePackage(paths[0], paths[1], args[0], paths, flags)
+        color.success("Done!")
+    else:
+        color.warn("-ni specified, skipping installation/compilation")
+
+def updatePackage(flags, paths, *args):
+    "Update to newest version of a repo, then recompile + reinstall program"
+
+    args = list(args)
+
+    color.isDebug = flags.debug
+
+    args[0] = args[0].lower()
+
+    packagename = args[0]
+
+    color.note("Deleting old binaries and source files.....")
+    #deletePackage(paths[0], paths[1], args[0], paths, branch = branch, commit = commit)
+    rmFromBin(paths[1], packagename, paths)
+
+    color.note("Pulling from github.....")
+    #color.debug(paths[0], "https://github.com/" + args[0], args[0])
+
+    if os.system(f"cd {paths[0]}/{args[0]}; git pull"):
+        error("Git error")
+
+    #downloadPackage(paths[0], "https://github.com/" + args[0], args[0], branch = branch, commit = commit)
             
     if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0], paths[0], args[0]):
         color.note("Package is not an Avalon package, but it is in the main repository... installing from there.....")
