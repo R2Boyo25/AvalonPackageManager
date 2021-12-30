@@ -15,3 +15,15 @@ python3 install.py
 cd ..
 rm -rf AvalonPackageManager
 ```
+
+# Usage
+```bash
+apm install user/repo
+# for my PowderSim repo
+apm install r2boyo25/powdersim
+# to install a local repo, just use
+apm install /path/to/repo
+# or
+apm install . 
+# if you are in the repo's folder
+```
