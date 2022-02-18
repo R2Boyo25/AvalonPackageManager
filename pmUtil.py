@@ -10,6 +10,7 @@ import getpass
 import platform
 import distro
 import filecmp
+import subprocess
 
 import case.case
 
@@ -306,23 +307,49 @@ def copyFilesToFiles(paths, pkgname, files = ['all']):
         for file in os.listdir(paths[0] + '/' + pkgname + '/'):
             copyFile(paths[0] + '/' + pkgname + '/' + file, paths[4] + '/' + pkgname + '/' + file)
 
+def getAptInstalled():
+    aptinstalled = []
+    o = subprocess.check_output("dpkg -l".split()).decode()
+    for i in o.split("\n"):
+        if i.strip() != "" and i.startswith("ii"):
+            try:
+                i = i.split("  ")[1]
+                if i.strip() not in aptinstalled:
+                    aptinstalled.append(i.strip())
+            except:
+                error(i)
+    
+    return aptinstalled
+
+def aptFilter(deps):
+    filtered = []
+    aptinstalled = getAptInstalled()
+    for dep in deps:
+        if dep not in aptinstalled:
+            filtered.append(dep)
+    
+    return filtered
+
+
 def installAptDeps(deps):
     try:
         deps['apt']
     except:
         return
     if deps['apt']:
-        color.note("Found apt dependencies, installing..... (this will require your password)")
-        depss = " ".join( deps['apt'] )
+        filtered_deps = aptFilter(deps['apt'])
+        if len(filtered_deps) > 0:
+            color.note("Found apt dependencies, installing..... (this will require your password)")
+            depss = " ".join(filtered_deps)
 
-        username = getpass.getuser()
+            username = getpass.getuser()
 
-        if username != 'root' and not username.startswith("u0_a"):
-            color.debug(f'sudo apt install -y {depss}')
-            os.system(f'sudo apt install -y {depss}')
-        else:
-            color.debug(f'apt install -y {depss}')
-            os.system(f'apt install -y {depss}')
+            if username != 'root' and not username.startswith("u0_a"):
+                color.debug(f'sudo apt install -y {depss}')
+                os.system(f'sudo apt install -y {depss}')
+            else:
+                color.debug(f'apt install -y {depss}')
+                os.system(f'apt install -y {depss}')
 
 def installBuildDepDeps(deps):
     try:
