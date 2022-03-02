@@ -27,7 +27,7 @@ try:
     with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
         bashrc = rbc.read()
         if not binDir in bashrc:
-            nbashrc = f'''\nexport PATH="$PATH:{binDir}"\n''' + bashrc
+            nbashrc = bashrc + f'''\nexport PATH="$PATH:{binDir}"\n'''
         else:
             nbashrc = bashrc
 

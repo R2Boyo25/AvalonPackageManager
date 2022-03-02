@@ -14,5 +14,13 @@
             "R2Boyo25/AvalonGen",
             "R2Boyo25/CLIParse"
         ]
-    }
+    },
+    "distros": [
+        "Ubuntu",
+        "Gentoo",
+        "Debian"
+    ],
+    "arches": [
+        "all"
+    ]
 }

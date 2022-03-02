@@ -81,10 +81,10 @@ def getInstalled(paths):
     return programs
 
 def getCachedPackageMainRepoInfo(cacheFolder, srcFolder, pkgname):
-    color.debug(f"{cacheFolder}/{pkgname}/package")
-    color.debug(case.case.getCaseInsensitivePath(f"{cacheFolder}/{pkgname}/package"))
+    #color.debug(f"{cacheFolder}/{pkgname}/package")
+    #color.debug(case.case.getCaseInsensitivePath(f"{cacheFolder}/{pkgname}/package"))
     if os.path.exists(case.case.getCaseInsensitivePath(f"{cacheFolder}/{pkgname}/package")):
-        color.debug("Loading from main repo cache")
+        #color.debug("Loading from main repo cache")
         with open(case.case.getCaseInsensitivePath(f"{cacheFolder}/{pkgname}/package"), 'r') as pkgfile:
             try:
                 return json.loads(pkgfile.read())
@@ -96,7 +96,7 @@ def getCachedPackageMainRepoInfo(cacheFolder, srcFolder, pkgname):
 
 def getCachedPackageRepoInfo(cacheFolder, srcFolder, pkgname):
     if os.path.exists(f"{srcFolder}/{pkgname}/.avalon/package"):
-        color.debug("Loading from src;", f"{srcFolder}/{pkgname}/.avalon/package")
+        #color.debug("Loading from src;", f"{srcFolder}/{pkgname}/.avalon/package")
         with open(f"{srcFolder}/{pkgname}/.avalon/package", 'r') as pkgfile:
             try:
                 return json.loads(pkgfile.read())
@@ -207,7 +207,7 @@ def getDistro():
 def distroIsSupported(pkg):
     color.debug(getDistro())
     if pkg['distros']:
-        return getDistro() in pkg['distros']
+        return (getDistro() in pkg['distros']) or (pkg['distros'] == ["all"])
     else:
         color.warn("Supported distros not specified, assuming this distro is supported.....")
         return True
@@ -219,7 +219,7 @@ def archIsSupported(pkg):
     color.debug(str(pkg))
     color.debug(getArch())
     if pkg['arches']:
-        return getArch() in pkg['arches']
+        return (getArch() in pkg['arches']) or (pkg['arches'] == ["all"])
     else:
         color.warn("Supported arches not specified, assuming this arch is supported.....")
         return True
@@ -283,6 +283,9 @@ def mvBinToBin(binFolder, fileFolder, srcFolder, binFile, binName):
         shutil.copyfile(srcFolder + "/" + binFile, fileFolder+'/'+binName.split('/')[-1])
     except:
         pass
+
+    if os.path.exists(binFolder + binName.split('/')[-1]) or os.path.lexists(binFolder + binName.split('/')[-1]):
+        os.remove(binFolder + binName.split('/')[-1])
     
     #os.symlink(fileFolder+'/'+binName, binFolder + binName.split('/')[-1])
     os.symlink(fileFolder+'/'+binFile, binFolder + binName.split('/')[-1])
@@ -395,15 +398,15 @@ def installPipDeps(deps):
         return
     color.note('Found pip dependencies, installing.....')
     depss = " ".join( deps['pip'] )
-    color.debug(f"pip3 install{" --user" if os.path.exists("/etc/portage") else ""} {depss}")
-    os.system(f"pip3 install{" --user" if os.path.exists("/etc/portage") else ""} {depss}")
+    color.debug(f"pip3 install{' --user' if os.path.exists('/etc/portage') else ''} {depss}")
+    os.system(f"pip3 install{' --user' if os.path.exists('/etc/portage') else ''} {depss}")
 
 def reqTxt(pkgname, paths):
     color.debug(paths[0] + "/" + pkgname + '/' + 'requirements.txt')
     color.debug(os.curdir)
     if os.path.exists(paths[0] + "/" + pkgname + '/' + 'requirements.txt'):
         color.note("Requirements.txt found, installing.....")
-        os.system(f'pip3 --disable-pip-version-check -q install{" --user" if os.path.exists("/etc/portage") else ""} -r {paths[0]}/{pkgname}/requirements.txt')
+        os.system(f"pip3 --disable-pip-version-check -q install{' --user' if os.path.exists('/etc/portage') else ''} -r {paths[0]}/{pkgname}/requirements.txt")
 
 def installDeps(flags, paths, args):
     pkg = getPackageInfo(paths, args[0])
@@ -421,6 +424,12 @@ def runScript(script, *args):
         'py':'python3',
         'sh':'bash'
     }
+
+    if os.path.exists('/etc/portage'):
+        with open(script, "r") as r:
+            e = r.read()
+            with open(script, "w") as w:
+                w.write(e.replace("pip3 install", "pip3 install --user").replace("pip install", "pip install --user"))
 
     argss = " ".join([f"{arg}" for arg in args])
 
