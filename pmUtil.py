@@ -395,15 +395,15 @@ def installPipDeps(deps):
         return
     color.note('Found pip dependencies, installing.....')
     depss = " ".join( deps['pip'] )
-    color.debug(f"pip3 install {depss}")
-    os.system(f"pip3 install {depss}")
+    color.debug(f"pip3 install{" --user" if os.path.exists("/etc/portage" else "")} {depss}")
+    os.system(f"pip3 install{" --user" if os.path.exists("/etc/portage" else "")} {depss}")
 
 def reqTxt(pkgname, paths):
     color.debug(paths[0] + "/" + pkgname + '/' + 'requirements.txt')
     color.debug(os.curdir)
     if os.path.exists(paths[0] + "/" + pkgname + '/' + 'requirements.txt'):
         color.note("Requirements.txt found, installing.....")
-        os.system(f'pip3 --disable-pip-version-check -q install -r {paths[0]}/{pkgname}/requirements.txt')
+        os.system(f'pip3 --disable-pip-version-check -q install{" --user" if os.path.exists("/etc/portage" else "")} -r {paths[0]}/{pkgname}/requirements.txt')
 
 def installDeps(flags, paths, args):
     pkg = getPackageInfo(paths, args[0])
