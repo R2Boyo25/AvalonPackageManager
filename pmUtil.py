@@ -413,7 +413,7 @@ def installDeps(flags, paths, args):
     if pkg['deps']:
         color.note("Found dependencies, installing.....")
         pkgdeps = pkg['deps']
-        if os.path.exists("/usr/bin/apt"):
+        if os.path.exists("/usr/bin/apt") and not os.path.exists("/usr/libexec/eselect-java/run-java-tool.bash"):
             installAptDeps(pkgdeps)
             installBuildDepDeps(pkgdeps)
         installAvalonDeps(flags, paths, args, pkgdeps)
