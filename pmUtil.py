@@ -413,8 +413,9 @@ def installDeps(flags, paths, args):
     if pkg['deps']:
         color.note("Found dependencies, installing.....")
         pkgdeps = pkg['deps']
-        installAptDeps(pkgdeps)
-        installBuildDepDeps(pkgdeps)
+        if os.path.exists("/usr/bin/apt"):
+            installAptDeps(pkgdeps)
+            installBuildDepDeps(pkgdeps)
         installAvalonDeps(flags, paths, args, pkgdeps)
         installPipDeps(pkgdeps)
     reqTxt(args[0], paths)
