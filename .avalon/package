@@ -18,7 +18,8 @@
     "distros": [
         "Ubuntu",
         "Gentoo",
-        "Debian"
+        "Debian",
+	"Raspbian GNU/Linux"
     ],
     "arches": [
         "all"
