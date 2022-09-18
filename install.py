@@ -1,12 +1,12 @@
 import os, sys
 
 print("Install dependencies.....")
-os.system(f"pip3 install{' --user' if os.path.exists('/etc/portage') else ''} -r requirements.txt")
+os.system(f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} -r requirements.txt")
 
 try: 
     import CLIParse
 except:
-    os.system(f"pip3 install{' --user' if os.path.exists('/etc/portage') else ''} git+https://github.com/R2Boyo25/CLIParse.git")
+    os.system(f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} git+https://github.com/R2Boyo25/CLIParse.git")
 
 print("Installing APM using APM...")
 os.system(f"python3 ./main.py install . {' '.join(sys.argv[1:])}")

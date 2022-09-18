@@ -19,7 +19,8 @@
         "Ubuntu",
         "Gentoo",
         "Debian",
-	"Raspbian GNU/Linux"
+	"Raspbian GNU/Linux",
+        "Debian GNU/Linux"
     ],
     "arches": [
         "all"
