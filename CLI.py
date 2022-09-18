@@ -8,7 +8,7 @@ from version import version, cyear
 
 before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
 
-p = Parse("apm", before = before)
+p = Parse("apm", before = before, flagsAsArgumentsAfterCommand = True)
 
 p.flag("update", short = "U", long = "update", help = "Reinstall APM dependencies")
 p.flag("fresh", short = "f", long = "fresh", help = "Reinstall instead of updating")
