@@ -335,10 +335,12 @@ def mvBinToBin(binFolder, fileFolder, srcFolder, binFile, binName):
     if os.path.exists(binFolder + binName.split('/')[-1]) or os.path.lexists(binFolder + binName.split('/')[-1]):
         os.remove(binFolder + binName.split('/')[-1])
 
-    os.symlink(fileFolder+'/'+binFile, binFolder + binName.split('/')[-1])
+    b = binName.split('/')[-1]
 
-    color.debug(f"chmod +x {fileFolder + '/' + binFile}")
-    os.system(f"chmod +x {fileFolder + '/' + binFile}")
+    os.symlink(fileFolder+'/'+b, binFolder + binName.split('/')[-1])
+
+    color.debug(f"chmod +x {fileFolder + '/' + b}")
+    os.system(f"chmod +x {fileFolder + '/' + b}")
 
 
 def copyFilesToFiles(paths, pkgname, files=['all']):
@@ -579,6 +581,9 @@ def installLocalPackage(flags, paths, args):
     tmppath = paths[5]
 
     shutil.rmtree(tmppath)
+
+    if not os.path.exists(tmppath):
+        os.mkdir(tmppath)
 
     color.isDebug = flags.debug
 
