@@ -633,11 +633,11 @@ def installLocalPackage(flags, paths, args):
 def installPackage(flags, paths, args):
     if os.path.exists(args[0]):
         installLocalPackage(flags, paths, args)
-        quit()
+        return
 
     if os.path.exists(f"{paths[0]}/{args[0].lower()}") and not flags.fresh:
         updatePackage(flags, paths, *args)
-        quit()
+        return
 
     color.isDebug = flags.debug
 

@@ -1,10 +1,10 @@
-- Detecting language (not needed)
-- Compiling compiled languages and storing binaries in `~/.avalon/bin/` (done)
-- Downloading source code to `~/.avalon/src/` (done)
-- Ability to add instructions for specific repositories in a .avalon folder (done)
-- A central repository with installation/compilation instructions for commonly used packages 
+- [x] Compiling compiled languages and storing binaries in `~/.avalonPM/bin/` (done)
+- [x] Downloading source code to `~/.avalonPM/src/` (done)
+- [x] Ability to add instructions for specific repositories in a .avalon folder (done)
+- [x] A central repository with installation/compilation instructions for commonly used packages 
     (hopefully maintained by community if the program gets big enough) (Done)
-- Specify supported arches and distros (done)
-- Versioning + Changelogs
-- Installing specific commits (done) (user/repo:commit)
-- Installing specific branches (done, nothing to test it on tho)(user/repo/branch)
+- [x] Specify supported arches and distros (done)
+- [ ] Versioning
+- [x] Changelogs
+- [x] Installing specific commits (done) (user/repo:commit)
+- [x] Installing specific branches (done)(user/repo/branch)

@@ -4,3 +4,6 @@ log.txt
 apm
 test.apm
 .vscode
+.mypy_cache
+*~
+#*#

@@ -1,2 +1,2 @@
-version = "1.1.1"
-cyear = "2021"
+version = "0.2.0"
+cyear = "2023"

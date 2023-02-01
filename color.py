@@ -1,4 +1,8 @@
 import os
+import sys
+
+issilent = False
+isDebug = False
 
 class colors:
     OK = 6
@@ -21,6 +25,7 @@ def success(*text):
 
 def error(*text):
     colorprint(*text, color = colors.FAIL)
+    sys.exit(1)
 
 def note(*text):
     colorprint(*text, color = colors.OK)
@@ -38,12 +43,6 @@ def silent(toset = None):
     if toset is None:
 
         issilent = not issilent
-    
-    else:
+        return
 
-        issilent = toset
-
-
-issilent = False
-
-isDebug = False
+    issilent = toset
