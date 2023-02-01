@@ -60,7 +60,7 @@ def refreshCacheFolder(*args):
 @p.command("pack")
 def genAPM(*args):
     'Generate .apm file with AvalonGen'
-    os.system(binpath + '/avalongen ' + "apm " + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+    os.system(binpath + '/avalongen ' + "package " + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
 
 @p.command("unpack")
 def unpackAPM(*args):

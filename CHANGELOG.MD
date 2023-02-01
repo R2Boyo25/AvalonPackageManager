@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `release`: interactive interface to bump release and edit `CHANGELOG.MD`
 - `changes [package] [version]`: List changes made since `version` in `package`
 
+## [0.2.1] - 2023-02-01
+
+### Fixed
+- `apm pack` uses `package` as the template instead of `apm`
+
 ## [0.2.0] - 2023-01-31
 
 ### Added
