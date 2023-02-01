@@ -25,7 +25,6 @@ def success(*text):
 
 def error(*text):
     colorprint(*text, color = colors.FAIL)
-    sys.exit(1)
 
 def note(*text):
     colorprint(*text, color = colors.OK)
