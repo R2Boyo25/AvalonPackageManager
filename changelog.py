@@ -82,9 +82,9 @@ def prettify_changelogs(logs: List[Tuple[str, List[Changelog]]]) -> bytes:
             
             for version in program[1]:
                 buf += "\033[1;4m"
-                buf += version["version"]
+                buf += str(version["version"])
                 buf += " \033[2m"
-                buf += version["release_date"].replace("[yanked]", "\033[31m[YANKED]\033[37m")
+                buf += str(version["release_date"]).replace("[yanked]", "\033[31m[YANKED]\033[37m")
                 buf += "\033[0m\n\n"
 
                 for changes in ["deprecated", "added", "changed", "removed", "fixed", "security"]:
