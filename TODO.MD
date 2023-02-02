@@ -4,7 +4,7 @@
 - [x] A central repository with installation/compilation instructions for commonly used packages 
     (hopefully maintained by community if the program gets big enough) (Done)
 - [x] Specify supported arches and distros (done)
-- [ ] Versioning
+- [x] Versioning
 - [x] Changelogs
 - [x] Installing specific commits (done) (user/repo:commit)
 - [x] Installing specific branches (done)(user/repo/branch)
