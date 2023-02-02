@@ -12,7 +12,10 @@ from case.case import getCaseInsensitivePath
 
 before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
 
-p = Parse("apm", before = before + "\nNOTE: options MUST be before command!", flagsAsArgumentsAfterCommand = True)
+p = Parse("apm",
+          before = before,
+          after = "NOTE: flags MUST be before command!",
+          flagsAsArgumentsAfterCommand = True)
 
 p.flag("update", short = "U", long = "update", help = "Reinstall APM dependencies")
 p.flag("fresh", short = "f", long = "fresh", help = "Reinstall instead of updating")
@@ -45,7 +48,7 @@ def create_changelog(path: str) -> None:
     if os.path.exists(path):
         return
     
-    with open(chlog, "w") as f:
+    with open(path, "w") as f:
         f.write("""
 # Changelog
 
@@ -66,7 +69,7 @@ def releaseSubmenu(_, __, *args):
 
     @rp.command("bump")
     def releaseBump(flags, *args):
-        "Bump `CHANGELOG.MD`'s version: major, minor, or patch\n\tIf `part` not specified, guess based off of `[Unreleased]`"
+        "Bump `CHANGELOG.MD`'s version: major, minor, or patch\nIf `part` not specified, guess based off of `[Unreleased]`"
 
         create_changelog(os.getcwd())
 
@@ -86,7 +89,7 @@ def releaseSubmenu(_, __, *args):
 
 @p.command("changes")
 def packageChanges(flags, paths, *args):
-    "View changes in `package` since `version`\n\tchanges [version]\n\tchanges [package]\n\tchanges <package> [version]"
+    "View changes in `package` since `version`\nchanges [version]\nchanges [package]\nchanges <package> [version]"
     if not len(args):
         changes = get_changes_after(".", semver.VersionInfo.parse("0.0.0"))
         
