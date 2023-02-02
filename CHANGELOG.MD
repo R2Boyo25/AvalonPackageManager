@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2023-02-01
+
 ### Added
-- `bump`: `major`, `minor`, `patch` - add new release to `CHANGELOG.MD`
-- `change`: edit `CHANGELOG.MD`
-- `release`: interactive interface to bump release and edit `CHANGELOG.MD`
-- `changes [package] [version]`: List changes made since `version` in `package`
+- `release bump`: move changes from `Unreleased` to a new version in `CHANGELOG.MD`
+- `release change`: edit `CHANGELOG.MD`
+- for `release` commands: make `CHANGELOG.MD` if it doesn't exist.
+- `changes <package> [version]`: List changes made since `version` in `package`
+- `changes [version]`
+- `changes [package]`
 
 ## [0.2.1] - 2023-02-01
 

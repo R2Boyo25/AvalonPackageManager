@@ -1,15 +1,18 @@
 import os
 import sys
+import color
+import semver
 
 from pmUtil import installPackage, uninstallPackage, installLocalPackage, redoBin, updatePackage, installed, dlSrc, updateCache, getInstalledRepos
 from path import binpath, srcpath, cachepath, configpath, tmppath, filepath
 from CLIParse import Parse # type: ignore
 from version import version, cyear
-from changelog import get_package_versions, display_changelogs_packages
+from changelog import get_package_versions, display_changelogs_packages, bump_version, get_changelog_path, get_changes_after, display_changelogs
+from case.case import getCaseInsensitivePath
 
-before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25\nNOTE: options MUST be before command!"
+before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
 
-p = Parse("apm", before = before, flagsAsArgumentsAfterCommand = True)
+p = Parse("apm", before = before + "\nNOTE: options MUST be before command!", flagsAsArgumentsAfterCommand = True)
 
 p.flag("update", short = "U", long = "update", help = "Reinstall APM dependencies")
 p.flag("fresh", short = "f", long = "fresh", help = "Reinstall instead of updating")
@@ -26,6 +29,88 @@ def display_changes(machine: bool = False):
         display_changelogs_packages(freeze_changelogs)
 
 
+def create_changelog(path: str) -> None:
+    path = getCaseInsensitivePath(path)
+    path += "/CHANGELOG.MD"
+
+    dname = os.path.dirname(path)
+    
+    chlog = getCaseInsensitivePath(dname + "/CHANGELOG.MD")
+    while not os.path.exists(chlog) and os.path.dirname(dname) != "/":
+        dname = os.path.dirname(dname)
+        chlog = getCaseInsensitivePath(dname + "/CHANGELOG.MD")
+        if os.path.exists(chlog):
+            return
+
+    if os.path.exists(path):
+        return
+    
+    with open(chlog, "w") as f:
+        f.write("""
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+""".strip() + "\n")
+        
+
+@p.command("release")
+def releaseSubmenu(_, __, *args):
+    "Submenu for interacting with changelogs"
+    
+    rp = Parse("apm release", before = before)
+
+    @rp.command("bump")
+    def releaseBump(flags, *args):
+        "Bump `CHANGELOG.MD`'s version: major, minor, or patch\n\tIf `part` not specified, guess based off of `[Unreleased]`"
+
+        create_changelog(os.getcwd())
+
+        bump_version(*args)
+
+    @rp.command("change")
+    def releaseChange(flags, *args):
+        "Edit `CHANGELOG.MD` w/ `$VISUAL_EDITOR`"
+
+        create_changelog(os.getcwd())
+        
+        visual_editor = os.environ.get("VISUAL_EDITOR", "nano")
+        
+        exit(os.system(f"{visual_editor} {get_changelog_path('.')}"))
+    
+    rp.run(args=args)
+
+@p.command("changes")
+def packageChanges(flags, paths, *args):
+    "View changes in `package` since `version`\n\tchanges [version]\n\tchanges [package]\n\tchanges <package> [version]"
+    if not len(args):
+        changes = get_changes_after(".", semver.VersionInfo.parse("0.0.0"))
+        
+        display_changelogs([("", changes)])
+        return
+
+    if len(args) == 2:
+        version = semver.VersionInfo.parse(args[1])
+
+        display_changelogs_packages([(args[0], version)])
+        return
+
+    if not "/" in args[0]:
+        version = semver.VersionInfo.parse(args[0])
+        changes = get_changes_after(".", version)
+        
+        display_changelogs([("", changes)])
+        return
+
+    pkgpath = srcpath + args[0]
+    changes = get_changes_after(pkgpath, semver.VersionInfo.parse("0.0.0"))
+    
+    display_changelogs([(args[0], changes)])
+    
 @p.command("gen")
 def genPackage(flags, paths, *args):
     'Generate a package using AvalonGen'

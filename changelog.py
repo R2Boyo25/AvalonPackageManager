@@ -5,10 +5,11 @@ import sys
 import subprocess
 import re
 import path
+import datetime
 
 from case.case import getCaseInsensitivePath
 from typing    import Optional, Generator, Dict, List, Any, Tuple
-from color     import debug
+from color     import debug, error
 
 
 Changelog = Dict[str, str | List[str] | Dict[str, Optional[int]]]
@@ -17,11 +18,21 @@ Changelog = Dict[str, str | List[str] | Dict[str, Optional[int]]]
 def get_changelog_path(package_dir: str) -> Optional[str]:
     "Get case insensitive path to `CHANGELOG.MD` in `package_dir`"
     
-    changelog_path = getCaseInsensitivePath(package_dir + "/" + "CHANGELOG.MD")
-    if not os.path.exists(changelog_path):
+    changelog_path = getCaseInsensitivePath(os.path.abspath(package_dir + "/CHANGELOG.MD"))
+
+    dname = os.path.dirname(changelog_path)
+    
+    chlog = getCaseInsensitivePath(dname + "/CHANGELOG.MD")
+    while not os.path.exists(chlog) and os.path.dirname(dname) != "/":
+        dname = os.path.dirname(dname)
+        chlog = getCaseInsensitivePath(dname + "/CHANGELOG.MD")
+        if not os.path.exists(chlog):
+            chlog = "/238ghdfg9832hnbjwhgfdsi783rkjf/uwjfgehfsguydsdf"
+    
+    if not os.path.exists(chlog):
         return None
 
-    return changelog_path
+    return chlog
 
 
 def get_parsed_changelog(package_dir: str) -> Optional[Dict[str, Any]]:
@@ -33,7 +44,7 @@ def get_parsed_changelog(package_dir: str) -> Optional[Dict[str, Any]]:
         debug(f"[Changelog] CHANGELOG.MD does not exist in {package_dir}.")
         return None
 
-    return keepachangelog.to_dict(changelog_path)
+    return keepachangelog.to_dict(changelog_path, show_unreleased = True)
 
 
 def current_version(package_dir: str) -> Optional[semver.VersionInfo]:
@@ -44,13 +55,16 @@ def current_version(package_dir: str) -> Optional[semver.VersionInfo]:
     if not chlog:
         return None
     
-    versions = chlog.keys()
+    versions = list(chlog.keys())
 
     if not len(versions):
         debug(f"[Changelog] CHANGELOG.MD has no versions.")
         return None
+
+    if versions[0] == "unreleased":
+        del versions[0]
     
-    return semver.VersionInfo.parse(list(versions)[0])
+    return semver.VersionInfo.parse(versions[0])
     
 
 def get_changes_after(package_dir: str, compare_version: semver.VersionInfo) -> Generator[Changelog, None, None]:
@@ -61,7 +75,9 @@ def get_changes_after(package_dir: str, compare_version: semver.VersionInfo) -> 
     if not chlog:
         return
 
-    for version in reversed(chlog.keys()):
+    for version in chlog.keys():
+        if version == "unreleased":
+            continue
         if semver.VersionInfo.parse(version) > compare_version:
             yield chlog[version]
 
@@ -132,5 +148,37 @@ def display_changelogs_packages(packages: List[Tuple[str, Optional[semver.Versio
                                startver))
     ) for package, startver in packages])
 
+def bump_version(part: str = None) -> None:
+    if not part:
+        try:
+            keepachangelog.release(get_changelog_path("."))
+            
+        except Exception:
+            # FIXME: only catch Exceptions for Unreleased section:
+            #        "Release content must be provided within changelog Unreleased section."
+            
+            error("No changes provided in `Unreleased` section of `CHANGELOG.MD`")
+            exit(1)
+        return
 
+    error("`release bump` does not support `part` yet (`keepachangelog` issue).")
+    exit(1)
+    
+    if part not in ['major', 'minor', 'patch']:
+        error(f"{part} must be `major`, `minor`, or `patch`")
+        exit(1)
+    
+    chl = get_parsed_changelog(".")
+
+    if not chl:
+        error("There exists no parseable `CHANGELOG.MD` in the current project.")
+        exit(1)
+
+    v = current_version(".").next_version(part = part)
+
+    chl[str(v)] = {
+        'version': str(v),
+        'release_date': datetime.datetime.utcnow().isoformat(" ").split(" ")[0]
+    }
+    
 # display_changelogs_packages(get_package_versions(["r2boyo25/avalonpackagemanager", "r2boyo25/cliparse"]))

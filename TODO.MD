@@ -8,3 +8,4 @@
 - [x] Changelogs
 - [x] Installing specific commits (done) (user/repo:commit)
 - [x] Installing specific branches (done)(user/repo/branch)
+- [ ] `--avalondir`, `-D` for changing the avalon directory prefix.
