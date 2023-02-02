@@ -180,5 +180,12 @@ def bump_version(part: str = None) -> None:
         'version': str(v),
         'release_date': datetime.datetime.utcnow().isoformat(" ").split(" ")[0]
     }
+
+def display_all_changelogs(packages: List[str]):
+    display_changelogs([(
+        package,
+        list(get_changes_after(path.srcpath + "/" + package.lower(),
+                               semver.VersionInfo.parse("0.0.0")))
+    ) for package in packages])
     
 # display_changelogs_packages(get_package_versions(["r2boyo25/avalonpackagemanager", "r2boyo25/cliparse"]))

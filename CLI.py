@@ -7,7 +7,7 @@ from pmUtil import installPackage, uninstallPackage, installLocalPackage, redoBi
 from path import binpath, srcpath, cachepath, configpath, tmppath, filepath
 from CLIParse import Parse # type: ignore
 from version import version, cyear
-from changelog import get_package_versions, display_changelogs_packages, bump_version, get_changelog_path, get_changes_after, display_changelogs
+from changelog import get_package_versions, display_changelogs_packages, bump_version, get_changelog_path, get_changes_after, display_changelogs, display_all_changelogs
 from case.case import getCaseInsensitivePath
 
 before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
@@ -102,6 +102,10 @@ def packageChanges(flags, paths, *args):
         display_changelogs_packages([(args[0], version)])
         return
 
+    if args[0] == "all":
+        display_all_changelogs(getInstalledRepos([srcpath]))
+        return
+    
     if not "/" in args[0]:
         version = semver.VersionInfo.parse(args[0])
         changes = get_changes_after(".", version)

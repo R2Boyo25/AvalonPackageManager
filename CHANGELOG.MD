@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2023-02-02
+
+### Fixed
+- `changes all` now displays changes for all packages since version `0.0.0`
+
 ## [0.3.1] - 2023-02-01
 
 ### Fixed
