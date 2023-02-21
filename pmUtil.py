@@ -264,11 +264,22 @@ def archIsSupported(pkg):
         return True
 
 
-def checkReqs(paths, pkgname):
+def checkReqs(paths, pkgname, force):
     pkg = getPackageInfo(paths, pkgname)
+
+    if force:
+        if not archIsSupported(pkg):
+            color.warn(f"Arch {getArch()} not supported by package, continuing anyway due to forced mode")
+            
+        if not distroIsSupported(pkg):
+            color.warn(f"Distro {getDistro()} not supported by package, continuing anyway due to forced mode")
+            
+        return
+        
     if not archIsSupported(pkg):
         deletePackage(paths[0], paths[1], pkgname, paths)
         error(f"Arch {getArch()} not supported by package")
+        
     if not distroIsSupported(pkg):
         deletePackage(paths[0], paths[1], pkgname, paths)
         error(f"Distro {getDistro()} not supported by package")
@@ -618,7 +629,7 @@ def installLocalPackage(flags, paths, args):
 
     shutil.rmtree(tmppath)
 
-    checkReqs(paths, args[0])
+    checkReqs(paths, args[0], flags.force)
 
     installDeps(flags, paths, args)
 
@@ -682,7 +693,7 @@ def installPackage(flags, paths, args):
     else:
         color.debug("Not in the main repo")
 
-    checkReqs(paths, args[0])
+    checkReqs(paths, args[0], flags.force)
 
     installDeps(flags, paths, args)
 
@@ -722,7 +733,7 @@ def updatePackage(flags, paths, *args):
     else:
         color.debug("Not in the main repo")
 
-    checkReqs(paths, args[0])
+    checkReqs(paths, args[0], flags.force)
 
     installDeps(flags, paths, args)
 
