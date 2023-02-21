@@ -15,3 +15,4 @@ print(
 """Done.
 It is now safe to delete the AvalonPackageManager folder you have just downloaded, 
 as it has been downloaded and installed to Avalon's directory."""
+)
