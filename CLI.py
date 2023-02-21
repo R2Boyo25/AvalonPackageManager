@@ -18,9 +18,10 @@ p = Parse("apm",
           flagsAsArgumentsAfterCommand = True)
 
 p.flag("update", short = "U", long = "update", help = "Reinstall APM dependencies")
-p.flag("fresh", short = "f", long = "fresh", help = "Reinstall instead of updating")
-p.flag("noinstall", long = "noinstall", help = "Only download, skip compilation and installation (Debug)")
+p.flag("fresh", short = "F", long = "fresh", help = "Reinstall instead of updating")
+p.flag("force", short = "f", long = "force", help = "Force install package.")
 p.flag("debug", short = "d", long = "debug", help = "Print debug output (VERY large amount of text)")
+p.flag("noinstall", long = "noinstall", help = "Only download, skip compilation and installation (Debug)")
 p.flag("machine", short = "m", long = "machine", help = "Disable user-facing features. Use in scripts and wrappers or things might break.")
 
 

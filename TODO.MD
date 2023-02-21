@@ -9,3 +9,5 @@
 - [x] Installing specific commits (done) (user/repo:commit)
 - [x] Installing specific branches (done)(user/repo/branch)
 - [ ] `--avalondir`, `-D` for changing the avalon directory prefix.
+- [x] rename `-f` to `-F` for fresh
+- [ ] add `-f` for force

@@ -8,11 +8,11 @@ import path
 import datetime
 
 from case.case import getCaseInsensitivePath
-from typing    import Optional, Generator, Dict, List, Any, Tuple
+from typing    import Optional, Generator, Dict, List, Any, Tuple, Union
 from color     import debug, error
 
 
-Changelog = Dict[str, str | List[str] | Dict[str, Optional[int]]]
+Changelog = Dict[str, Union[str, List[str], Dict[str, Optional[int]]]]
 
 
 def get_changelog_path(package_dir: str) -> Optional[str]:
