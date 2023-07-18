@@ -684,22 +684,22 @@ def installPackage(flags, paths, args):
     color.note("Downloading from github.....")
     color.debug(paths[0], "https://github.com/" + args[0], args[0])
     downloadPackage(paths[0], "https://github.com/" +
-                    args[0], args[0], branch=branch, commit=commit)
+                    packagename, packagename, branch=branch, commit=commit)
 
-    if isInMainRepo(args[0], paths) and not isAvalonPackage(args[0], paths[0], args[0]):
+    if isInMainRepo(packagename, paths) and not isAvalonPackage(packagename, paths[0], packagename):
         color.note(
             "Package is not an Avalon package, but it is in the main repository... installing from there.....")
-        moveMainRepoToAvalonFolder(paths[2], args[0], paths[0], paths)
+        moveMainRepoToAvalonFolder(paths[2], packagename, packagename, paths)
     else:
         color.debug("Not in the main repo")
 
-    checkReqs(paths, args[0], flags.force)
+    checkReqs(paths, packagename, flags.force)
 
     installDeps(flags, paths, args)
 
     if not flags.noinstall:
         color.note("Beginning compilation/installation.....")
-        compilePackage(paths[0], paths[1], args[0], paths, flags)
+        compilePackage(paths[0], paths[1], packagename, paths, flags)
         color.success("Done!")
     else:
         color.warn("-ni specified, skipping installation/compilation")
