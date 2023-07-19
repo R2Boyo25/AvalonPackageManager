@@ -145,17 +145,18 @@ def getRepoPackageInfo(
 ) -> Any:
     if not branch and not commit:
         r = requests.get(
-            f"https://raw.githubusercontent.com/{pkgname}/master/.avalon/package"
+            log.debug(
+                f"https://raw.githubusercontent.com/{pkgname}/master/.avalon/package"
+            )
         )
-        log.debug(f"https://raw.githubusercontent.com/{pkgname}/master/.avalon/package")
+
         log.debug(r.text)
 
         if r.status_code == 404:
             r = requests.get(
-                f"https://raw.githubusercontent.com/{pkgname}/main/.avalon/package"
-            )
-            log.debug(
-                f"https://raw.githubusercontent.com/{pkgname}/main/.avalon/package"
+                log.debug(
+                    f"https://raw.githubusercontent.com/{pkgname}/main/.avalon/package"
+                )
             )
             log.debug(r.text)
 
@@ -169,10 +170,9 @@ def getRepoPackageInfo(
     else:
         if branch:
             r = requests.get(
-                f"https://raw.githubusercontent.com/{pkgname}/{branch}/.avalon/package"
-            )
-            log.debug(
-                f"https://raw.githubusercontent.com/{pkgname}/{branch}/.avalon/package"
+                log.debug(
+                    f"https://raw.githubusercontent.com/{pkgname}/{branch}/.avalon/package"
+                )
             )
             log.debug(r.text)
 
@@ -183,10 +183,9 @@ def getRepoPackageInfo(
 
         elif commit:
             r = requests.get(
-                f"https://raw.githubusercontent.com/{pkgname}/{commit}/.avalon/package"
-            )
-            log.debug(
-                f"https://raw.githubusercontent.com/{pkgname}/{commit}/.avalon/package"
+                log.debug(
+                    f"https://raw.githubusercontent.com/{pkgname}/{commit}/.avalon/package"
+                )
             )
             log.debug(r.text)
 
@@ -198,10 +197,9 @@ def getRepoPackageInfo(
 
 def getMainRepoPackageInfo(pkgname: str) -> Any:
     r = requests.get(
-        f"https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package"
-    )
-    log.debug(
-        f"https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package"
+        log.debug(
+            f"https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package"
+        )
     )
     log.debug(r.text)
 
@@ -240,15 +238,13 @@ def isInMainRepo(pkgname: str, paths: list[str]) -> bool:
 
 def downloadMainRepo(cacheDir: str) -> None:
     if os.path.exists(f"{cacheDir}/R2Boyo25"):
-        log.debug(f"cd {cacheDir}; git pull")
-        os.system(f"cd {cacheDir}; git pull")
+        os.system(log.debug(f"cd {cacheDir}; git pull"))
 
     else:
-        log.debug(
-            f'git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages "{cacheDir}" -q'
-        )
         os.system(
-            f'git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages "{cacheDir}" -q'
+            log.debug(
+                f'git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages "{cacheDir}" -q'
+            )
         )
 
 
@@ -435,8 +431,7 @@ def mvBinToBin(
 
     os.symlink(fileFolder + "/" + binFile, binFolder + binName.split("/")[-1])
 
-    log.debug(f"chmod +x {fileFolder + '/' + b}")
-    os.system(f"chmod +x {fileFolder + '/' + b}")
+    os.system(log.debug(f"chmod +x {fileFolder + '/' + b}"))
 
 
 def copyFilesToFiles(
@@ -502,12 +497,10 @@ def installAptDeps(deps: dict[str, list[str]]) -> None:
             username = getpass.getuser()
 
             if username != "root" and not username.startswith("u0_a"):
-                log.debug(f"sudo apt install -y {depss}")
-                os.system(f"sudo apt install -y {depss}")
+                os.system(log.debug(f"sudo apt install -y {depss}"))
 
             else:
-                log.debug(f"apt install -y {depss}")
-                os.system(f"apt install -y {depss}")
+                os.system(log.debug(f"apt install -y {depss}"))
 
 
 def installBuildDepDeps(deps: dict[str, list[str]]) -> None:
@@ -526,15 +519,11 @@ def installBuildDepDeps(deps: dict[str, list[str]]) -> None:
         username = getpass.getuser()
 
         if username != "root" and not username.startswith("u0_a"):
-            log.debug(f"sudo apt build-dep -y {depss}")
-
-            if os.system(f"sudo apt build-dep -y {depss}"):
+            if os.system(log.debug(f"sudo apt build-dep -y {depss}")):
                 error("apt error")
 
         else:
-            log.debug(f"apt build-dep -y {depss}")
-
-            if os.system(f"apt build-dep -y {depss}"):
+            if os.system(log.debug(f"apt build-dep -y {depss}")):
                 error("apt error")
 
 
@@ -574,11 +563,10 @@ def installPipDeps(deps: dict[str, list[str]]) -> None:
 
     log.note("Found pip dependencies, installing.....")
     depss = " ".join(deps["pip"])
-    log.debug(
-        f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} {depss}"
-    )
     os.system(
-        f"python3 -m  install{' --user' if os.path.exists('/etc/portage') else ''} {depss}"
+        log.debug(
+            f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} {depss}"
+        )
     )
 
 
@@ -589,7 +577,9 @@ def reqTxt(pkgname: str, paths: list[str]) -> None:
     if os.path.exists(paths[0] + "/" + pkgname + "/" + "requirements.txt"):
         log.note("Requirements.txt found, installing.....")
         os.system(
-            f"python3 -m pip --disable-pip-version-check -q install{' --user' if os.path.exists('/etc/portage') else ''} -r {paths[0]}/{pkgname}/requirements.txt"
+            log.debug(
+                f"python3 -m pip --disable-pip-version-check -q install{' --user' if os.path.exists('/etc/portage') else ''} -r {paths[0]}/{pkgname}/requirements.txt"
+            )
         )
 
 
@@ -629,12 +619,10 @@ def runScript(script: str, *args: str) -> int:
     argss = " ".join([f"{arg}" for arg in args])
 
     if script.split(".")[-1].lower() in langs:
-        log.debug(f"{langs[script.split('.')[-1]]} {script} {argss}")
-        return os.system(f"{langs[script.split('.')[-1]]} {script} {argss}")
+        return os.system(log.debug(f"{langs[script.split('.')[-1]]} {script} {argss}"))
 
     else:
-        log.debug(f'{langs["sh"]} {script} {argss}')
-        return os.system(f'{langs["sh"]} {script} {argss}')
+        return os.system(log.debug(f'{langs["sh"]} {script} {argss}'))
 
 
 def compilePackage(
@@ -761,15 +749,11 @@ def installLocalPackage(
         error(f"{args[0]} does not exist")
 
     elif os.path.isdir(args[0]):
-        log.debug(f"cp -r {args[0]}/./ {tmppath}")
-
-        if os.system(f"cp -r {args[0]}/./ {tmppath}"):
+        if os.system(log.debug(f"cp -r {args[0]}/./ {tmppath}")):
             error("Failed to copy files")
 
     else:
-        log.debug(f"tar -xf {args[0]} -C {tmppath}")
-
-        if os.system(f"tar -xf {args[0]} -C {tmppath}"):
+        if os.system(log.debug(f"tar -xf {args[0]} -C {tmppath}")):
             error("Error unpacking package, not a tar.gz file")
 
     cfgfile = json.load(open(f"{tmppath}/.avalon/package", "r"))
@@ -784,14 +768,11 @@ def installLocalPackage(
     deletePackage(paths[0], paths[1], args[0], paths, cfgfile)
 
     log.note("Copying package files....")
-    log.debug(f"mkdir -p {paths[0]}/{args[0]}")
 
-    if os.system(f"mkdir -p {paths[0]}/{args[0]}"):
+    if os.system(log.debug(f"mkdir -p {paths[0]}/{args[0]}")):
         error("Failed to make src folder")
 
-    log.debug(f"cp -a {tmppath}/. {paths[0]}/{args[0]}")
-
-    if os.system(f"cp -a {tmppath}/. {paths[0]}/{args[0]}"):
+    if os.system(log.debug(f"cp -a {tmppath}/. {paths[0]}/{args[0]}")):
         error("Failed to copy files from temp folder to src folder")
 
     shutil.rmtree(tmppath)
