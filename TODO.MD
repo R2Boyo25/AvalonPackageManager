@@ -16,3 +16,4 @@
 - [x] rewrite log.debug() calls to use the returned string instead of duplicating code
 - [ ] add `am_root()` for the dep stuff
 - [ ] set up the ability to use Virtual Environments for Python packages.
+- [ ] Add the ability to specify whether to treat flags as args per-command in CLIParse
