@@ -10,7 +10,7 @@ import distro
 import filecmp
 import subprocess
 
-import CLIParse # type: ignore
+import CLIParse  # type: ignore
 from typing import Any
 
 import apm.log as log
@@ -41,10 +41,10 @@ def copyFile(src: str, dst: str) -> None:
                 copyFile(src + "/" + file, dst + "/" + file)
 
 
-def getRepos(user: str, cache: bool =True) -> Any:
+def getRepos(user: str, cache: bool = True) -> Any:
     if cache:
         pass
-    
+
     else:
         pass
 
@@ -74,10 +74,10 @@ def getVersion(paths: list[str], repo: str) -> str | bool:
     if pkg:
         if "version" in pkg:
             return str(pkg["version"])
-        
+
         else:
             return False
-        
+
     else:
         return False
 
@@ -88,10 +88,10 @@ def getInstalled(paths: list[str]) -> list[str]:
 
     for repo in getInstalledRepos(paths):
         v = getVersion(paths, repo)
-        
+
         if v:
             programs.append(f"{repo}=={v}")
-            
+
         else:
             programs.append(repo)
 
@@ -105,11 +105,11 @@ def getCachedPackageMainRepoInfo(cacheFolder: str, srcFolder: str, pkgname: str)
         ) as pkgfile:
             try:
                 return json.loads(pkgfile.read())
-            
+
             except Exception as e:
                 log.debug(pkgfile.read())
                 raise e
-            
+
     else:
         return False
 
@@ -119,11 +119,11 @@ def getCachedPackageRepoInfo(cacheFolder: str, srcFolder: str, pkgname: str) -> 
         with open(f"{srcFolder}/{pkgname}/.avalon/package", "r") as pkgfile:
             try:
                 return json.loads(pkgfile.read())
-            
+
             except Exception as e:
                 log.debug("Content: " + pkgfile.read())
                 raise e
-            
+
     else:
         return False
 
@@ -131,23 +131,23 @@ def getCachedPackageRepoInfo(cacheFolder: str, srcFolder: str, pkgname: str) -> 
 def getCachedPackageInfo(cacheFolder: str, srcFolder: str, pkgname: str) -> Any:
     if getCachedPackageMainRepoInfo(cacheFolder, srcFolder, pkgname):
         return getCachedPackageMainRepoInfo(cacheFolder, srcFolder, pkgname)
-    
+
     elif getCachedPackageRepoInfo(cacheFolder, srcFolder, pkgname):
         return getCachedPackageRepoInfo(cacheFolder, srcFolder, pkgname)
-    
+
     else:
         log.debug("Not cached")
         return False
 
 
-def getRepoPackageInfo(pkgname: str, commit: str | None = None, branch: str | None = None) -> Any:
+def getRepoPackageInfo(
+    pkgname: str, commit: str | None = None, branch: str | None = None
+) -> Any:
     if not branch and not commit:
         r = requests.get(
             f"https://raw.githubusercontent.com/{pkgname}/master/.avalon/package"
         )
-        log.debug(
-            f"https://raw.githubusercontent.com/{pkgname}/master/.avalon/package"
-        )
+        log.debug(f"https://raw.githubusercontent.com/{pkgname}/master/.avalon/package")
         log.debug(r.text)
 
         if r.status_code == 404:
@@ -211,17 +211,19 @@ def getMainRepoPackageInfo(pkgname: str) -> Any:
     return r.json()
 
 
-def getPackageInfo(paths: list[str], pkgname: str, commit: str | None = None, branch: str | None = None) -> NPackage:
+def getPackageInfo(
+    paths: list[str], pkgname: str, commit: str | None = None, branch: str | None = None
+) -> NPackage:
     log.debug(pkgname)
     log.debug(str(paths))
-    
+
     if getCachedPackageInfo(paths[2], paths[0], pkgname):
         return NPackage(getCachedPackageInfo(paths[2], paths[0], pkgname))
-    
+
     else:
         try:
             return NPackage(getRepoPackageInfo(pkgname, commit=commit, branch=branch))
-        
+
         except:
             return NPackage(getMainRepoPackageInfo(pkgname))
 
@@ -230,7 +232,7 @@ def isInMainRepo(pkgname: str, paths: list[str]) -> bool:
     if getCachedPackageMainRepoInfo(paths[2], paths[0], pkgname):
         log.debug("Found in main repo cache")
         return True
-    
+
     else:
         log.debug("Not found in main repo cache")
         return False
@@ -240,7 +242,7 @@ def downloadMainRepo(cacheDir: str) -> None:
     if os.path.exists(f"{cacheDir}/R2Boyo25"):
         log.debug(f"cd {cacheDir}; git pull")
         os.system(f"cd {cacheDir}; git pull")
-        
+
     else:
         log.debug(
             f'git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages "{cacheDir}" -q'
@@ -250,12 +252,14 @@ def downloadMainRepo(cacheDir: str) -> None:
         )
 
 
-def moveMainRepoToAvalonFolder(cacheFolder: str, pkgname: str, srcFolder: str, paths: list[str]) -> None:
+def moveMainRepoToAvalonFolder(
+    cacheFolder: str, pkgname: str, srcFolder: str, paths: list[str]
+) -> None:
     log.debug(pkgname)
     log.debug("Moving to .avalon folder")
     log.debug(srcFolder + "/" + pkgname + "/.avalon")
     shutil.rmtree(srcFolder + "/" + pkgname + "/.avalon", ignore_errors=True)
-    
+
     if isInMainRepo(pkgname, paths):
         log.debug(
             getCaseInsensitivePath(cacheFolder + "/" + pkgname),
@@ -277,10 +281,10 @@ def getDistro() -> str:
 
 def distroIsSupported(pkg: Any) -> bool:
     log.debug(getDistro())
-    
+
     if pkg["distros"]:
         return (getDistro() in pkg["distros"]) or (pkg["distros"] == ["all"])
-    
+
     else:
         log.warn(
             "Supported distros not specified, assuming this distro is supported....."
@@ -295,14 +299,12 @@ def getArch() -> str:
 def archIsSupported(pkg: Any) -> bool:
     log.debug(str(pkg))
     log.debug(getArch())
-    
+
     if pkg["arches"]:
         return (getArch() in pkg["arches"]) or (pkg["arches"] == ["all"])
-    
+
     else:
-        log.warn(
-            "Supported arches not specified, assuming this arch is supported....."
-        )
+        log.warn("Supported arches not specified, assuming this arch is supported.....")
         return True
 
 
@@ -331,42 +333,54 @@ def checkReqs(paths: list[str], pkgname: str, force: bool) -> None:
         error(f"Distro {getDistro()} not supported by package")
 
 
-def downloadPackage(srcFolder: str, packageUrl: str, packagename: str | None = None, branch: str | None = None, commit: str | None = None) -> None:
+def downloadPackage(
+    srcFolder: str,
+    packageUrl: str,
+    packagename: str | None = None,
+    branch: str | None = None,
+    commit: str | None = None,
+) -> None:
     if not packagename:
         packagename = packageUrl.lstrip("https://github.com/")
-        
+
     log.debug(packagename)
     os.chdir(srcFolder)
-    
+
     if commit and branch:
         os.system("git clone " + packageUrl + " " + packagename + " -q")
         os.system(f"cd {packagename}; git reset --hard {commit}")
-        
+
     elif branch:
         packagename = "/".join(packagename.split(":")[:-1])
         os.system(
             "git clone --depth 1 " + packageUrl + " " + packagename + " -q -b " + branch
         )
-        
+
     elif commit:
         os.system("git clone " + packageUrl + " " + packagename + " -q")
         os.system(f"cd {packagename}; git reset --hard {commit}")
-        
+
     else:
         os.system("git clone --depth 1 " + packageUrl + " " + packagename + " -q")
 
 
 def deletePackage(
-    srcFolder: str, binFolder: str, packagename: str, paths: list[str], cfg: Any | None = None, commit: str | None = None, branch: str | None = None
+    srcFolder: str,
+    binFolder: str,
+    packagename: str,
+    paths: list[str],
+    cfg: Any | None = None,
+    commit: str | None = None,
+    branch: str | None = None,
 ) -> None:
     rmFromSrc(srcFolder, packagename)
-    
+
     if cfg:
         rmFromBin(binFolder, packagename, paths, cfg, branch=branch, commit=commit)
-        
+
     else:
         rmFromBin(binFolder, packagename, paths, branch=branch, commit=commit)
-        
+
     rmFromFiles(paths[4], packagename)
 
 
@@ -375,15 +389,22 @@ def rmFromSrc(srcFolder: str, packagename: str) -> None:
         shutil.rmtree(f"{srcFolder}/{packagename}", ignore_errors=True)
 
 
-def rmFromBin(binFolder: str, packagename: str, paths: list[str], pkg: Any | None = None, commit: str | None = None, branch: str | None = None) -> None:
+def rmFromBin(
+    binFolder: str,
+    packagename: str,
+    paths: list[str],
+    pkg: Any | None = None,
+    commit: str | None = None,
+    branch: str | None = None,
+) -> None:
     log.debug("RMBIN:", packagename)
-    
+
     if not pkg:
         pkg = getPackageInfo(paths, packagename, commit, branch)
-        
+
     if "binname" in pkg.keys():
         log.debug(f"{binFolder}/{pkg['binname']}")
-        
+
         if os.path.exists(f"{binFolder}/{pkg['binname']}"):
             log.debug("Deleting", f"{binFolder}/{pkg['binname']}")
             os.remove(f"{binFolder}/{pkg['binname']}")
@@ -394,12 +415,14 @@ def rmFromFiles(fileFolder: str, packagename: str) -> None:
         shutil.rmtree(f"{fileFolder}/{packagename}", ignore_errors=True)
 
 
-def mvBinToBin(binFolder: str, fileFolder: str, srcFolder: str, binFile: str, binName: str) -> None:
+def mvBinToBin(
+    binFolder: str, fileFolder: str, srcFolder: str, binFile: str, binName: str
+) -> None:
     try:
         shutil.copyfile(
             srcFolder + "/" + binFile, fileFolder + "/" + binName.split("/")[-1]
         )
-        
+
     except:
         pass
 
@@ -416,16 +439,18 @@ def mvBinToBin(binFolder: str, fileFolder: str, srcFolder: str, binFile: str, bi
     os.system(f"chmod +x {fileFolder + '/' + b}")
 
 
-def copyFilesToFiles(paths: list[str], pkgname: str, files: list[str] = ["all"]) -> None:
+def copyFilesToFiles(
+    paths: list[str], pkgname: str, files: list[str] = ["all"]
+) -> None:
     log.debug(str(files))
-    
+
     if files != ["all"]:
         for file in files:
             copyFile(
                 paths[0] + "/" + pkgname + "/" + file,
                 paths[4] + "/" + pkgname + "/" + file,
             )
-            
+
     else:
         for file in os.listdir(paths[0] + "/" + pkgname + "/"):
             copyFile(
@@ -441,10 +466,10 @@ def getAptInstalled() -> list[str]:
         if i.strip() != "" and i.startswith("ii"):
             try:
                 i = i.split("  ")[1]
-                
+
                 if i.strip() not in aptinstalled:
                     aptinstalled.append(i.strip())
-                    
+
             except:
                 error(i)
 
@@ -452,7 +477,7 @@ def getAptInstalled() -> list[str]:
 
 
 def aptFilter(deps: list[str]) -> list[str]:
-    '''Filter out installed packages'''
+    """Filter out installed packages"""
     aptinstalled = getAptInstalled()
 
     return list(filter(lambda dep: dep not in aptinstalled, deps))
@@ -461,25 +486,25 @@ def aptFilter(deps: list[str]) -> list[str]:
 def installAptDeps(deps: dict[str, list[str]]) -> None:
     try:
         deps["apt"]
-        
+
     except:
         return
-    
+
     if deps["apt"]:
         filtered_deps = aptFilter(deps["apt"])
-        
+
         if len(filtered_deps) > 0:
             log.note(
                 "Found apt dependencies, installing..... (this will require your password)"
             )
-            
+
             depss = " ".join(filtered_deps)
             username = getpass.getuser()
 
             if username != "root" and not username.startswith("u0_a"):
                 log.debug(f"sudo apt install -y {depss}")
                 os.system(f"sudo apt install -y {depss}")
-                
+
             else:
                 log.debug(f"apt install -y {depss}")
                 os.system(f"apt install -y {depss}")
@@ -488,43 +513,48 @@ def installAptDeps(deps: dict[str, list[str]]) -> None:
 def installBuildDepDeps(deps: dict[str, list[str]]) -> None:
     try:
         deps["build-dep"]
-        
+
     except:
         return
-    
+
     if deps["build-dep"]:
         log.note(
             "Found build-dep (apt) dependencies, installing..... (this will require your password)"
         )
-        
+
         depss = " ".join(deps["build-dep"])
         username = getpass.getuser()
 
         if username != "root" and not username.startswith("u0_a"):
             log.debug(f"sudo apt build-dep -y {depss}")
-            
+
             if os.system(f"sudo apt build-dep -y {depss}"):
                 error("apt error")
-                
+
         else:
             log.debug(f"apt build-dep -y {depss}")
-            
+
             if os.system(f"apt build-dep -y {depss}"):
                 error("apt error")
 
 
-def installAvalonDeps(flags: CLIParse.flags.Flags, paths: list[str], args: list[str], deps: dict[str, list[str]]) -> None:
+def installAvalonDeps(
+    flags: CLIParse.flags.Flags,
+    paths: list[str],
+    args: list[str],
+    deps: dict[str, list[str]],
+) -> None:
     try:
         deps["avalon"]
-        
+
     except:
         return
-    
+
     args = args.copy()
-    
+
     if deps["avalon"]:
         log.note("Found avalon dependencies, installing.....")
-        
+
         for dep in deps["avalon"]:
             if not os.path.exists(paths[0] + dep.lower()) or flags.update:
                 log.note("Installing", dep)
@@ -538,10 +568,10 @@ def installAvalonDeps(flags: CLIParse.flags.Flags, paths: list[str], args: list[
 def installPipDeps(deps: dict[str, list[str]]) -> None:
     try:
         deps["pip"]
-        
+
     except:
         return
-    
+
     log.note("Found pip dependencies, installing.....")
     depss = " ".join(deps["pip"])
     log.debug(
@@ -555,7 +585,7 @@ def installPipDeps(deps: dict[str, list[str]]) -> None:
 def reqTxt(pkgname: str, paths: list[str]) -> None:
     log.debug(paths[0] + "/" + pkgname + "/" + "requirements.txt")
     log.debug(os.curdir)
-    
+
     if os.path.exists(paths[0] + "/" + pkgname + "/" + "requirements.txt"):
         log.note("Requirements.txt found, installing.....")
         os.system(
@@ -565,20 +595,20 @@ def reqTxt(pkgname: str, paths: list[str]) -> None:
 
 def installDeps(flags: CLIParse.flags.Flags, paths: list[str], args: list[str]) -> None:
     pkg = getPackageInfo(paths, args[0])
-    
+
     if pkg["deps"]:
         log.note("Found dependencies, installing.....")
         pkgdeps = pkg["deps"]
-        
+
         if os.path.exists("/usr/bin/apt") and not os.path.exists(
             "/usr/libexec/eselect-java/run-java-tool.bash"
         ):
             installAptDeps(pkgdeps)
             installBuildDepDeps(pkgdeps)
-            
+
         installAvalonDeps(flags, paths, args, pkgdeps)
         installPipDeps(pkgdeps)
-        
+
     reqTxt(args[0], paths)
 
 
@@ -588,7 +618,7 @@ def runScript(script: str, *args: str) -> int:
     if os.path.exists("/etc/portage"):
         with open(script, "r") as r:
             e = r.read()
-            
+
             with open(script, "w") as w:
                 w.write(
                     e.replace("pip3 install", "pip3 install --user").replace(
@@ -601,13 +631,19 @@ def runScript(script: str, *args: str) -> int:
     if script.split(".")[-1].lower() in langs:
         log.debug(f"{langs[script.split('.')[-1]]} {script} {argss}")
         return os.system(f"{langs[script.split('.')[-1]]} {script} {argss}")
-    
+
     else:
         log.debug(f'{langs["sh"]} {script} {argss}')
         return os.system(f'{langs["sh"]} {script} {argss}')
 
 
-def compilePackage(srcFolder: str, binFolder: str, packagename: str, paths: list[str], flags: CLIParse.flags.Flags) -> None:
+def compilePackage(
+    srcFolder: str,
+    binFolder: str,
+    packagename: str,
+    paths: list[str],
+    flags: CLIParse.flags.Flags,
+) -> None:
     pkg = getPackageInfo(paths, packagename)
     os.chdir(f"{srcFolder}/{packagename}")
 
@@ -623,7 +659,7 @@ def compilePackage(srcFolder: str, binFolder: str, packagename: str, paths: list
 
         if pkg["compileScript"]:
             log.note("Compile script found, compiling.....")
-            
+
             if runScript(
                 pkg["compileScript"],
                 f"\"{srcFolder+f'/{packagename}'}\" \"{pkg['binname']}\" \"{paths[4]+packagename}\"",
@@ -661,7 +697,7 @@ def compilePackage(srcFolder: str, binFolder: str, packagename: str, paths: list
 
     if pkg["installScript"]:
         log.note("Installing.....")
-        
+
         if pkg["needsCompiled"] or pkg["compileScript"] or pkg["binname"]:
             if runScript(
                 pkg["installScript"],
@@ -707,7 +743,9 @@ def compilePackage(srcFolder: str, binFolder: str, packagename: str, paths: list
         )
 
 
-def installLocalPackage(flags: CLIParse.flags.Flags, paths: list[str], args: list[str]) -> None:
+def installLocalPackage(
+    flags: CLIParse.flags.Flags, paths: list[str], args: list[str]
+) -> None:
     tmppath = paths[5]
 
     shutil.rmtree(tmppath)
@@ -718,27 +756,27 @@ def installLocalPackage(flags: CLIParse.flags.Flags, paths: list[str], args: lis
     log.isDebug = flags.debug
 
     log.note("Unpacking package.....")
-    
+
     if not os.path.exists(args[0]):
         error(f"{args[0]} does not exist")
-        
+
     elif os.path.isdir(args[0]):
         log.debug(f"cp -r {args[0]}/./ {tmppath}")
-        
+
         if os.system(f"cp -r {args[0]}/./ {tmppath}"):
             error("Failed to copy files")
-            
+
     else:
         log.debug(f"tar -xf {args[0]} -C {tmppath}")
-        
+
         if os.system(f"tar -xf {args[0]} -C {tmppath}"):
             error("Error unpacking package, not a tar.gz file")
 
     cfgfile = json.load(open(f"{tmppath}/.avalon/package", "r"))
-    
+
     try:
         args[0] = (cfgfile["author"] + "/" + cfgfile["repo"]).lower()
-        
+
     except:
         error("Package's package file need 'author' and 'repo'")
 
@@ -747,12 +785,12 @@ def installLocalPackage(flags: CLIParse.flags.Flags, paths: list[str], args: lis
 
     log.note("Copying package files....")
     log.debug(f"mkdir -p {paths[0]}/{args[0]}")
-    
+
     if os.system(f"mkdir -p {paths[0]}/{args[0]}"):
         error("Failed to make src folder")
-        
+
     log.debug(f"cp -a {tmppath}/. {paths[0]}/{args[0]}")
-    
+
     if os.system(f"cp -a {tmppath}/. {paths[0]}/{args[0]}"):
         error("Failed to copy files from temp folder to src folder")
 
@@ -766,12 +804,14 @@ def installLocalPackage(flags: CLIParse.flags.Flags, paths: list[str], args: lis
         log.note("Beginning compilation/installation.....")
         compilePackage(paths[0], paths[1], args[0], paths, flags)
         log.success("Done!")
-        
+
     else:
         log.warn("-ni specified, skipping installation/compilation")
 
 
-def installPackage(flags: CLIParse.flags.Flags, paths: list[str], args: list[str]) -> None:
+def installPackage(
+    flags: CLIParse.flags.Flags, paths: list[str], args: list[str]
+) -> None:
     if os.path.exists(args[0]):
         installLocalPackage(flags, paths, args)
         return
@@ -789,23 +829,23 @@ def installPackage(flags: CLIParse.flags.Flags, paths: list[str], args: list[str
 
     packagename = args[0]
 
-    if ":" in packagename: # commit
+    if ":" in packagename:  # commit
         branch = None
         commit = packagename.split(":")[-1]
         packagename = packagename.split(":")[0]
-        
-    elif packagename.count("/") > 1: # branch
+
+    elif packagename.count("/") > 1:  # branch
         branch = packagename.split("/")[-1]
         packagename = "/".join(packagename.split(":")[:-1])
         commit = None
-        
-    elif (":" in packagename) and (packagename.count("/") > 1): # branch and commit
+
+    elif (":" in packagename) and (packagename.count("/") > 1):  # branch and commit
         commit = packagename.split(":")[-1]
         packagename = packagename.split(":")[0]
         branch = packagename.split("/")[-1]
         packagename = "/".join(packagename.split(":")[:-1])
-        
-    else: # no branch or commit specified
+
+    else:  # no branch or commit specified
         branch = None
         commit = None
 
@@ -830,7 +870,7 @@ def installPackage(flags: CLIParse.flags.Flags, paths: list[str], args: list[str
             "Package is not an Avalon package, but it is in the main repository... installing from there....."
         )
         moveMainRepoToAvalonFolder(paths[2], packagename, packagename, paths)
-        
+
     else:
         log.debug("Not in the main repo")
 
@@ -842,7 +882,7 @@ def installPackage(flags: CLIParse.flags.Flags, paths: list[str], args: list[str
         log.note("Beginning compilation/installation.....")
         compilePackage(paths[0], paths[1], packagename, paths, flags)
         log.success("Done!")
-        
+
     else:
         log.warn("-ni specified, skipping installation/compilation")
 
@@ -873,7 +913,7 @@ def updatePackage(flags: CLIParse.flags.Flags, paths: list[str], *args_: str) ->
             "Package is not an Avalon package, but it is in the main repository... installing from there....."
         )
         moveMainRepoToAvalonFolder(paths[2], args[0], paths[0], paths)
-        
+
     else:
         log.debug("Not in the main repo")
 
@@ -885,7 +925,7 @@ def updatePackage(flags: CLIParse.flags.Flags, paths: list[str], *args_: str) ->
         log.note("Beginning compilation/installation.....")
         compilePackage(paths[0], paths[1], args[0], paths, flags)
         log.success("Done!")
-        
+
     else:
         log.warn("-ni specified, skipping installation/compilation")
 
@@ -924,7 +964,9 @@ def redoBin(flags: CLIParse.flags.Flags, paths: list[str], *args_: str) -> None:
         )
 
 
-def uninstallPackage(flags: CLIParse.flags.Flags, paths: list[str], args: list[str]) -> None:
+def uninstallPackage(
+    flags: CLIParse.flags.Flags, paths: list[str], args: list[str]
+) -> None:
     log.isDebug = flags.debug
 
     args[0] = args[0].lower()
@@ -951,7 +993,7 @@ def uninstallPackage(flags: CLIParse.flags.Flags, paths: list[str], args: list[s
     else:
         log.note("Uninstall script found, running.....")
         os.chdir(paths[1])
-        
+
         if runScript(
             paths[0] + "/" + args[0] + "/" + pkg["uninstallScript"],
             paths[0],
@@ -980,10 +1022,10 @@ def dlSrc(flags: CLIParse.flags.Flags, paths: list[str], *args: str) -> None:
 
     if len(args) == 1:
         os.system(f"git clone https://github.com/{args[0].lower()}")
-        
+
     elif len(args) == 2:
         os.system(f"git clone https://github.com/{args[0].lower()} {args[1]}")
-        
+
     else:
         os.system("git pull")
 

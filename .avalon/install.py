@@ -4,7 +4,7 @@ import sys
 
 binDir = sys.argv[1]
 srcDir = sys.argv[2]
-binf = 'apm'
+binf = "apm"
 filesFolder = srcDir
 
 
@@ -18,14 +18,14 @@ with open(f"bin/{binf}", "w") as avalonStarter:
     os.system(f"chmod +x bin/{binf}")
 
 try:
-    with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
+    with open(os.path.expanduser("~/.bashrc"), "r") as rbc:
         bashrc = rbc.read()
         if not binDir in bashrc:
-            nbashrc = bashrc + f'''\nexport PATH="$PATH:{binDir}"\n'''
+            nbashrc = bashrc + f"""\nexport PATH="$PATH:{binDir}"\n"""
         else:
             nbashrc = bashrc
 
-        with open(os.path.expanduser('~/.bashrc'), 'w') as wbc:
+        with open(os.path.expanduser("~/.bashrc"), "w") as wbc:
             wbc.write(nbashrc)
 except:
     print(f"Failed to add {binDir} to PATH\nPlease add it yourself.")

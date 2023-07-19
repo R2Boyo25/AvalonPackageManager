@@ -46,7 +46,7 @@ def get_parsed_changelog(package_dir: str) -> Optional[Dict[str, Any]]:
         debug(f"[Changelog] CHANGELOG.MD does not exist in {package_dir}.")
         return None
 
-    return keepachangelog.to_dict(changelog_path, show_unreleased=True) # type: ignore
+    return keepachangelog.to_dict(changelog_path, show_unreleased=True)  # type: ignore
 
 
 def current_version(package_dir: str) -> Optional[semver.VersionInfo]:

@@ -66,4 +66,4 @@ def getCaseInsensitivePath(path: str, RET_FOUND: bool = False) -> Any:
         if RET_FOUND:
             return path, False
         else:
-            return path # cant find the right one, just return the path as is.
+            return path  # cant find the right one, just return the path as is.

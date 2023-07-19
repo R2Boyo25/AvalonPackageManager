@@ -28,10 +28,12 @@ def success(*text: str) -> str:
 
     return " ".join(text)
 
+
 def error(*text: str) -> str:
     colorprint(*text, color=colors.FAIL)
 
     return " ".join(text)
+
 
 def note(*text: str) -> str:
     colorprint(*text, color=colors.OK)

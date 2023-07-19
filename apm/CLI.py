@@ -1,6 +1,6 @@
 import os
 import sys
-import semver # type: ignore
+import semver  # type: ignore
 
 from typing import Any
 
@@ -121,7 +121,9 @@ def releaseSubmenu(_: Any, __: Any, *args: str) -> None:
 
         create_changelog(os.getcwd())
 
-        visual_editor = os.environ.get("VISUAL_EDITOR", os.environ.get("EDITOR", "nano"))
+        visual_editor = os.environ.get(
+            "VISUAL_EDITOR", os.environ.get("EDITOR", "nano")
+        )
 
         exit(os.system(f"{visual_editor} {get_changelog_path('.')}"))
 
@@ -176,7 +178,9 @@ def installFunction(flags: CLIParse.flags.Flags, paths: list[str], *args: str) -
 
 
 @p.command("uninstall")
-def uninstallFunction(flags: CLIParse.flags.Flags, paths: list[str], *args: str) -> None:
+def uninstallFunction(
+    flags: CLIParse.flags.Flags, paths: list[str], *args: str
+) -> None:
     "Uninstalls a package"
     uninstallPackage(flags, paths, list(args))
 

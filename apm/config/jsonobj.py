@@ -11,10 +11,10 @@ class JsonObj:
 
     def __getitem__(self, item: Any) -> Any:
         self.load()
-        
+
         try:
             return self.config[item]
-        
+
         except:
             return False
 
@@ -33,5 +33,5 @@ class JsonObj:
 
     def keys(self) -> Any:
         self.load()
-        
+
         return self.config.keys()
