@@ -1,3 +1,0 @@
-import CLI
-
-CLI.main()

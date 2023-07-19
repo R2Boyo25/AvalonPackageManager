@@ -1,27 +1,21 @@
 import os
 import sys
 
-try:
-    binf = sys.argv[1]
-    filesFolder = sys.argv[2]
-    binDir = sys.argv[3]
-    srcDir = sys.argv[4]
 
-    switched = False
-except:
-    binDir = sys.argv[1]
-    srcDir = sys.argv[2]
-    binf = 'apm'
-    filesFolder = srcDir
+binDir = sys.argv[1]
+srcDir = sys.argv[2]
+binf = 'apm'
+filesFolder = srcDir
 
-    switched = True
 
-#pkgName = sys.argv[3]
+if not os.path.exists("bin"):
+    os.mkdir("bin")
 
-with open(binf, "w") as avalonStarter:
-    filecontent = f'''python3 {filesFolder}/main.py "$@"'''
+
+with open(f"bin/{binf}", "w") as avalonStarter:
+    filecontent = f'''#!/usr/bin/env bash\n\nPYTHONPATH="$PYTHONPATH:{filesFolder}/" python3 {filesFolder}/apm/__main__.py "$@"'''
     avalonStarter.write(filecontent)
-    #os.system("chmod +x " + f"{binDir}/avalon")
+    os.system(f"chmod +x bin/{binf}")
 
 try:
     with open(os.path.expanduser('~/.bashrc'), 'r') as rbc:
@@ -35,6 +29,3 @@ try:
             wbc.write(nbashrc)
 except:
     print(f"Failed to add {binDir} to PATH\nPlease add it yourself.")
-
-if switched:
-    print("The command to run avalon has been switched to apm, please use that now.")

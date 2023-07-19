@@ -10,4 +10,8 @@
 - [x] Installing specific branches (done)(user/repo/branch)
 - [ ] `--avalondir`, `-D` for changing the avalon directory prefix.
 - [x] rename `-f` to `-F` for fresh
-- [ ] add `-f` for force
+- [x] add `-f` for force
+- [ ] .avalon/include - basically inverted .gitignore or .dockerignore
+- [ ] rewrite into a module
+- [ ] rewrite log.debug() calls to use the returned string instead of duplicating code
+- [ ] add `am_root()` for the dep stuff

@@ -1,7 +1,7 @@
 __pycache__
 main
 log.txt
-apm
+bin/apm
 test.apm
 .vscode
 .mypy_cache

@@ -1,0 +1,10 @@
+*.py
+requirements.txt
+!/install.py
+!__pycache__
+
+# stuff I need to hardcode
+.avalon
+.git
+.gitignore
+CHANGELOG.MD

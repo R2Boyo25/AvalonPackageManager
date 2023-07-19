@@ -1,8 +1,9 @@
 {
-    "version": "1.1.1",
+    "version": "0.3.2",
     "author": "R2Boyo25",
     "repo": "AvalonPackageManager",
     "binname": "apm",
+    "binfile": "bin/apm",
     "mvBinAfterInstallScript": true,
     "toCopy": [
         "all"
