@@ -871,7 +871,7 @@ def installPackage(
 def updatePackage(flags: CLIParse.flags.Flags, paths: list[str], *args_: str) -> None:
     "Update to newest version of a repo, then recompile + reinstall program"
 
-    args: list[str] = list(args)
+    args: list[str] = list(args_)
 
     if len(args) == 0:
         args.append("r2boyo25/avalonpackagemanager")
