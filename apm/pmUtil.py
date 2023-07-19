@@ -865,7 +865,7 @@ def installPackage(
         log.success("Done!")
 
     else:
-        log.warn("-ni specified, skipping installation/compilation")
+        log.warn("--noinstall specified, skipping installation/compilation")
 
 
 def updatePackage(flags: CLIParse.flags.Flags, paths: list[str], *args_: str) -> None:

@@ -13,7 +13,10 @@ if not os.path.exists("bin"):
 
 
 with open(f"bin/{binf}", "w") as avalonStarter:
-    filecontent = f'''#!/usr/bin/env bash\n\nPYTHONPATH="$PYTHONPATH:{filesFolder}/" python3 {filesFolder}/apm/__main__.py "$@"'''
+    filecontent = f"""#!/usr/bin/env bash
+
+PYTHONPATH="$PYTHONPATH:{filesFolder}/" python3 -m apm "$@"
+"""
     avalonStarter.write(filecontent)
     os.system(f"chmod +x bin/{binf}")
 
