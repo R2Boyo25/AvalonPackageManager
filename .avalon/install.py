@@ -2,10 +2,9 @@ import os
 import sys
 from pathlib import Path
 
-binDir = sys.argv[1]
-srcDir = sys.argv[2]
+binDir = sys.argv[3]
+filesFolder = sys.argv[2]
 binf = "apm"
-filesFolder = srcDir
 
 # Create the bin directory if it doesn't exist
 binPath = Path("bin")
