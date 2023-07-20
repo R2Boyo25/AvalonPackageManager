@@ -1,17 +1,31 @@
 import os
+from pathlib import Path
 
-avalonpath = os.path.expanduser("~/.config/avalonpm/")
+# https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest#variables
 
-configpath = avalonpath + "config/"
-binpath = avalonpath + "bin/"
-filepath = avalonpath + "files/"
+xdg_path = Path(os.environ.get("HOME", "~")).expanduser()
+xdg_data_dir = Path(
+    os.environ.get("XDG_DATA_HOME", xdg_path / ".local/share")
+).expanduser()
+xdg_config_dir = Path(
+    os.environ.get("XDG_CONFIG_HOME", xdg_path / ".config")
+).expanduser()
+xdg_cache_dir = Path(os.environ.get("XDG_CACHE_HOME", xdg_path / ".cache")).expanduser()
+temp_dir = Path(
+    os.environ.get("TMPDIR", os.environ.get("TEMP", os.environ.get("TMP", "/tmp")))
+).expanduser()
 
-srcpath = os.path.expanduser("~/.cache/avalonpm/src/")
-cachepath = os.path.expanduser("~/.cache/avalonpm/cache/")
-tmppath = os.path.expanduser("~/.cache/avalonpm/tmp/")
+avalon_root = xdg_config_dir / "avalonpm"
+avalon_cache = xdg_cache_dir / "avalonpm"
 
-_paths = [avalonpath, srcpath, binpath, cachepath, configpath, filepath, tmppath]
+paths = {
+    "root": avalon_root,
+    "src": avalon_cache / "src",
+    "bin": Path(os.environ.get("AVALON_BIN", avalon_root / "bin")),
+    "cache": avalon_cache / "cache",
+    "files": avalon_root / "files",
+    "tmp": temp_dir / "avalonpm",
+}
 
-for _path in _paths:
-    if not os.path.exists(_path):
-        os.makedirs(_path)
+for _, path in paths.items():
+    path.mkdir(parents=True, exist_ok=True)

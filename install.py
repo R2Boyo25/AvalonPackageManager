@@ -6,10 +6,10 @@ os.system(
 )
 
 try:
-    import CLIParse  # type: ignore
+    import kazparse  # type: ignore
 except:
     os.system(
-        f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} git+https://github.com/R2Boyo25/CLIParse.git"
+        f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} git+https://github.com/R2Boyo25/cliparse.git"
     )
 
 print("Installing APM using APM...")

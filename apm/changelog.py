@@ -6,6 +6,7 @@ import subprocess
 import re
 import datetime
 from typing import Optional, Generator, Dict, List, Any, Tuple, Union, Iterable
+from pathlib import Path
 
 import apm.path as path
 from .case.case import getCaseInsensitivePath
@@ -15,29 +16,29 @@ from .log import debug, error
 Changelog = Dict[str, Union[str, List[str], Dict[str, Optional[int]]]]
 
 
-def get_changelog_path(package_dir: str) -> Optional[str]:
+def get_changelog_path(package_dir: Path) -> Optional[Path]:
     "Get case insensitive path to `CHANGELOG.MD` in `package_dir`"
 
-    changelog_path = getCaseInsensitivePath(
-        os.path.abspath(package_dir + "/CHANGELOG.MD")
+    changelog_path = Path(
+        getCaseInsensitivePath(str((package_dir / "CHANGELOG.MD").absolute()))
     )
 
-    dname = os.path.dirname(changelog_path)
+    dname = changelog_path.parent
 
-    chlog = str(getCaseInsensitivePath(dname + "/CHANGELOG.MD"))
-    while not os.path.exists(chlog) and os.path.dirname(dname) != "/":
-        dname = os.path.dirname(dname)
-        chlog = getCaseInsensitivePath(dname + "/CHANGELOG.MD")
-        if not os.path.exists(chlog):
-            chlog = "/238ghdfg9832hnbjwhgfdsi783rkjf/uwjfgehfsguydsdf"
+    chlog = Path(getCaseInsensitivePath(str(dname / "CHANGELOG.MD")))
+    while not chlog.exists() and str(dname.parent) != "/":
+        dname = dname.parent
+        chlog = Path(getCaseInsensitivePath(str(dname / "CHANGELOG.MD")))
+        if not chlog.exists():
+            chlog = Path("/238ghdfg9832hnbjwhgfdsi783rkjf/uwjfgehfsguydsdf")
 
-    if not os.path.exists(chlog):
+    if not chlog.exists():
         return None
 
     return chlog
 
 
-def get_parsed_changelog(package_dir: str) -> Optional[Dict[str, Any]]:
+def get_parsed_changelog(package_dir: Path) -> Optional[Dict[str, Any]]:
     "Parse changelog at `package_dir/CHANGELOG.MD`"
 
     changelog_path = get_changelog_path(package_dir)
@@ -49,7 +50,7 @@ def get_parsed_changelog(package_dir: str) -> Optional[Dict[str, Any]]:
     return keepachangelog.to_dict(changelog_path, show_unreleased=True)  # type: ignore
 
 
-def current_version(package_dir: str) -> Optional[semver.VersionInfo]:
+def current_version(package_dir: Path) -> Optional[semver.VersionInfo]:
     "Get latest version from `package_dir/CHANGELOG.MD`"
 
     chlog = get_parsed_changelog(package_dir)
@@ -70,7 +71,7 @@ def current_version(package_dir: str) -> Optional[semver.VersionInfo]:
 
 
 def get_changes_after(
-    package_dir: str, compare_version: semver.VersionInfo
+    package_dir: Path, compare_version: semver.VersionInfo
 ) -> Generator[Changelog, None, None]:
     "Get versions from `package_dir/CHANGELOG.MD` that are later than `compare_version`"
 
@@ -148,7 +149,7 @@ def get_package_versions(packages: List[str]) -> List[Tuple[str, semver.VersionI
     out = []
 
     for package in packages:
-        ver = current_version(path.srcpath + "/" + package.lower())
+        ver = current_version(path.paths["src"] / package.lower())
         out.append((package, ver if ver else semver.VersionInfo.parse("0.0.0")))
 
     return out
@@ -161,7 +162,7 @@ def display_changelogs_packages(
         [
             (
                 package,
-                list(get_changes_after(path.srcpath + "/" + package.lower(), startver)),
+                list(get_changes_after(path.paths["src"] / package.lower(), startver)),
             )
             for package, startver in packages
         ]
@@ -171,7 +172,7 @@ def display_changelogs_packages(
 def bump_version(part: Optional[str] = None) -> None:
     if not part:
         try:
-            keepachangelog.release(get_changelog_path("."))
+            keepachangelog.release(get_changelog_path(Path(".")))
 
         except Exception:
             # FIXME: only catch Exceptions for Unreleased section:
@@ -209,7 +210,7 @@ def display_all_changelogs(packages: List[str]) -> None:
                 package,
                 list(
                     get_changes_after(
-                        path.srcpath + "/" + package.lower(),
+                        path.paths["src"] / package.lower(),
                         semver.VersionInfo.parse("0.0.0"),
                     )
                 ),

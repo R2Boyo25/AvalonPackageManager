@@ -19,5 +19,8 @@ class NPackage:
     def keys(self) -> Iterable[Any]:
         return self.idict.keys()
 
+    def get(self, item: Any, default: Any | None = None) -> None | Any:
+        return self.idict.get(item, default)
+
     def __str__(self) -> str:
         return str(self.idict)

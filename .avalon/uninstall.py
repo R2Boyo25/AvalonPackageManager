@@ -1,7 +1,7 @@
 import os
 import sys
 
-binDir = sys.argv[2]
+binDir = sys.argv[3]
 
 with open(os.path.expanduser("~/.bashrc"), "r") as rbc:
     bashrc = rbc.read()

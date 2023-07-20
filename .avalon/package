@@ -13,7 +13,7 @@
     "deps": {
         "avalon": [
             "R2Boyo25/AvalonGen",
-            "R2Boyo25/CLIParse"
+            "R2Boyo25/kazparse"
         ]
     },
     "distros": [
