@@ -12,10 +12,10 @@ import apm.path as path
 from .case.case import getCaseInsensitivePath
 from .log import debug, error
 
-
+# Define a custom type for the changelog data
 Changelog = Dict[str, Union[str, List[str], Dict[str, Optional[int]]]]
 
-
+# Function to get the case insensitive path to 'CHANGELOG.MD' in 'package_dir'
 def get_changelog_path(package_dir: Path) -> Optional[Path]:
     "Get case insensitive path to `CHANGELOG.MD` in `package_dir`"
 
@@ -37,7 +37,7 @@ def get_changelog_path(package_dir: Path) -> Optional[Path]:
 
     return chlog
 
-
+# Function to parse the changelog at 'package_dir/CHANGELOG.MD'
 def get_parsed_changelog(package_dir: Path) -> Optional[Dict[str, Any]]:
     "Parse changelog at `package_dir/CHANGELOG.MD`"
 
@@ -49,7 +49,7 @@ def get_parsed_changelog(package_dir: Path) -> Optional[Dict[str, Any]]:
 
     return keepachangelog.to_dict(changelog_path, show_unreleased=True)  # type: ignore
 
-
+# Function to get the latest version from 'package_dir/CHANGELOG.MD'
 def current_version(package_dir: Path) -> Optional[semver.VersionInfo]:
     "Get latest version from `package_dir/CHANGELOG.MD`"
 
@@ -69,7 +69,7 @@ def current_version(package_dir: Path) -> Optional[semver.VersionInfo]:
 
     return semver.VersionInfo.parse(versions[0])
 
-
+# Function to get changes in 'package_dir/CHANGELOG.MD' that are later than 'compare_version'
 def get_changes_after(
     package_dir: Path, compare_version: semver.VersionInfo
 ) -> Generator[Changelog, None, None]:
@@ -86,11 +86,11 @@ def get_changes_after(
         if semver.VersionInfo.parse(version) > compare_version:
             yield chlog[version]
 
-
+# Helper function to format inline code in changelog entries
 def inline_code(match: re.Match[str]) -> str:
     return "\033[35;7m" + match[1] + "\033[27;39m"
 
-
+# Function to prettify changelogs for display
 def prettify_changelogs(logs: Iterable[Tuple[str, Iterable[Changelog]]]) -> bytes:
     buf = ""
     END_SECTION = "\033[0m\n\n"
@@ -133,7 +133,7 @@ def prettify_changelogs(logs: Iterable[Tuple[str, Iterable[Changelog]]]) -> byte
 
     return bytes(buf, "utf-8")
 
-
+# Function to display changelogs in a paginated view using 'less'
 def display_changelogs(logs: Iterable[Tuple[str, Iterable[Changelog]]]) -> None:
 
     i = prettify_changelogs(logs)
@@ -144,7 +144,7 @@ def display_changelogs(logs: Iterable[Tuple[str, Iterable[Changelog]]]) -> None:
 
         p.wait()
 
-
+# Function to retrieve the latest version for a list of packages
 def get_package_versions(packages: List[str]) -> List[Tuple[str, semver.VersionInfo]]:
     out = []
 
@@ -154,7 +154,7 @@ def get_package_versions(packages: List[str]) -> List[Tuple[str, semver.VersionI
 
     return out
 
-
+# Function to display changelogs for specific packages and versions
 def display_changelogs_packages(
     packages: Iterable[Tuple[str, Optional[semver.VersionInfo]]]
 ) -> None:
@@ -168,7 +168,7 @@ def display_changelogs_packages(
         ]
     )
 
-
+# Function to bump the version in the 'CHANGELOG.MD' file based on the 'Unreleased' section
 def bump_version(part: Optional[str] = None) -> None:
     if not part:
         try:
@@ -202,7 +202,7 @@ def bump_version(part: Optional[str] = None) -> None:
         "release_date": datetime.datetime.utcnow().isoformat(" ").split(" ")[0],
     }
 
-
+# Function to display all changelogs for a list of packages
 def display_all_changelogs(packages: List[str]) -> None:
     display_changelogs(
         [
