@@ -889,7 +889,7 @@ def updatePackage(
 
 def redoBin(flags: kazparse.flags.Flags, paths: dict[str, Path], *args_: str) -> None:
     "Redo making of symlinks without recompiling program"
-    args: list[str] = list(args)
+    args: list[str] = list(args_)
 
     log.isDebug = flags.debug
 
