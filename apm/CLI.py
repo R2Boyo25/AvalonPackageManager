@@ -28,6 +28,7 @@ from .changelog import (
     display_changelogs,
     display_all_changelogs,
 )
+from .case.case import getCaseInsensitivePath
 
 # Set up some initial information and configurations
 before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
