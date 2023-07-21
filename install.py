@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+
+"""
+Install script for Avalon.
+"""
+
 import os
 import sys
 import pathlib
@@ -12,6 +18,8 @@ print("Installing dependencies using Poetry (sorry for the dependency)...")
 
 
 def install_pip_dependency(*args: str) -> int:
+    """Run pip install command but :sparkles: portable :sparkles:"""
+
     # Check if we are running on Gentoo (package manager is portage)
     on_gentoo = os.path.exists("/etc/portage")
 
@@ -26,32 +34,18 @@ def install_pip_dependency(*args: str) -> int:
     )  # nosec
 
 
-# Check if poetry is installed, if not, install it.  Poetry is needed
-# for install the dependencies of APM itself
-try:
-    import poetry
+# Install dependencies.
+install_pip_dependency(".")
 
-    del poetry
+ON_GENTOO = os.path.exists("/etc/portage")
 
-except ImportError:
-    install_pip_dependency("poetry")
+# The '--user' flag installs the package for the current user only
+# (non-system-wide).  '--user' is necessary to prevent breaking
+# Portage's python installation
 
+USER_FLAG = " --user" if ON_GENTOO else ""
 
-# Install dependencies with Poetry.
-os.system("poetry install --no-root --without=dev")  # nosec
-
-
-# Try importing 'kazparse' module; if it fails, install it from GitHub
-# repository
-try:
-    import kazparse
-
-    del kazparse
-
-except ImportError:
-    # Install 'kazparse' from the GitHub repository using 'pip'
-    install_pip_dependency("git+https://github.com/R2Boyo25/cliparse.git")
-
+os.system(f"yes y | python3 -m pip uninstall{USER_FLAG} apm")  # nosec
 
 print("Installing APM using the downloaded APM...")
 
@@ -65,7 +59,7 @@ if result:
     # If the installation failed, print an error message and exit the
     # script with the result code
     print("Failed to install APM.")
-    exit(result)
+    sys.exit(result)
 
 print(
     f"""Done.

@@ -9,26 +9,25 @@ import os
 import shutil
 import json
 import getpass
-import platform
 import filecmp
 import subprocess  # nosec B404
 
 from typing import Any
 from pathlib import Path
 
-import distro
 import kazparse
 
 from apm import log
 from apm.log import fatal_error
 from .package import NPackage
-from .case.case import getCaseInsensitivePath
 from .metadata import (
     is_in_metadata_repository,
     get_package_metadata,
     download_metadata_repository,
     is_avalon_package,
+    move_metadata_to_dot_avalon_folder,
 )
+from .requirements import check_for_satisfied_package_requirements
 
 
 def copy_file(src: Path, dst: Path) -> None:
@@ -44,112 +43,6 @@ def copy_file(src: Path, dst: Path) -> None:
         if os.path.exists(src):
             for file in os.listdir(src):
                 copy_file(src / file, dst / file)
-
-
-def move_metadata_to_dot_avalon_folder(
-    pkgname: str, paths: dict[str, Path]
-) -> None:
-    """Copy metadata for package to paths["src"]/packagename/.avalon"""
-
-    log.debug(
-        "Copying package metadata from the metadata repo for",
-        pkgname,
-        "into the package.",
-    )
-
-    shutil.rmtree(
-        log.debug(str(paths["src"] / pkgname / ".avalon")), ignore_errors=True
-    )
-
-    if is_in_metadata_repository(pkgname, paths):
-        log.debug(
-            "Copying metadata from",
-            getCaseInsensitivePath(str(paths["cache"] / pkgname)),
-            "to",
-            str(paths["src"] / pkgname / ".avalon"),
-        )
-        shutil.copytree(
-            getCaseInsensitivePath(str(paths["cache"] / pkgname)),
-            str(paths["src"] / pkgname / ".avalon"),
-        )
-
-
-def get_linux_distribution() -> str:
-    """Returns the name of the current Linux distribution."""
-
-    return distro.linux_distribution()[0]
-
-
-def linux_distribution_is_supported(pkg: Any) -> bool:
-    """Check if Linux distribution is supported by the package."""
-    log.debug(get_linux_distribution())
-
-    if pkg["distros"]:
-        return (get_linux_distribution() in pkg["distros"]) or (
-            pkg["distros"] == ["all"]
-        )
-
-    log.warn(
-        "Supported Linux distributions have not been specified, \
-        assuming this Linux distribution is supported..."
-    )
-    return True
-
-
-def get_architecture() -> str:
-    """Returns the current CPU architecture."""
-
-    return platform.machine()
-
-
-def architecture_is_supported(pkg: Any) -> bool:
-    """Checks if the CPU architecture is supported by the package."""
-
-    log.debug("Package metadata:", str(pkg))
-    log.debug("Architecture:", get_architecture())
-
-    if pkg["arches"]:
-        return (get_architecture() in pkg["arches"]) or (
-            pkg["arches"] == ["all"]
-        )
-
-    log.warn(
-        "Supported architectures have not been specified, \
-        assuming that this architecture is supported..."
-    )
-    return True
-
-
-def check_for_satisfied_package_requirements(
-    paths: dict[str, Path], pkgname: str, force: bool
-) -> None:
-    """Checks that the package's requirements are satisfied"""
-    pkg = get_package_metadata(paths, pkgname)
-
-    if force:
-        if not architecture_is_supported(pkg):
-            log.warn(
-                f"Arch {get_architecture()} not supported by \
-                package, continuing anyway due to forced mode"
-            )
-
-        if not linux_distribution_is_supported(pkg):
-            log.warn(
-                f"Distro {get_linux_distribution()} not supported by package, \
-                continuing anyway due to forced mode"
-            )
-
-        return
-
-    if not architecture_is_supported(pkg):
-        delete_package(paths, pkgname)
-        fatal_error(f"Arch {get_architecture()} not supported by package")
-
-    if not linux_distribution_is_supported(pkg):
-        delete_package(paths, pkgname)
-        fatal_error(
-            f"Distro {get_linux_distribution()} not supported by package"
-        )
 
 
 def download_package(
@@ -639,7 +532,16 @@ def install_package_from_directory(
 
     shutil.rmtree(tmppath)
 
-    check_for_satisfied_package_requirements(paths, args[0], flags.force)
+    (
+        satisfied,
+        constraint,
+        unsupported,
+    ) = check_for_satisfied_package_requirements(paths, args[0], flags.force)
+
+    if not satisfied:
+        fatal_error(
+            f'{constraint} "{unsupported}" is not supported by {args[0]}.'
+        )
 
     install_package_dependencies(flags, paths, args)
 
@@ -723,7 +625,18 @@ def install_package(
     else:
         log.debug("Not in the main repo")
 
-    check_for_satisfied_package_requirements(paths, packagename, flags.force)
+    (
+        satisfied,
+        constraint,
+        unsupported,
+    ) = check_for_satisfied_package_requirements(
+        paths, packagename, flags.force
+    )
+
+    if not satisfied:
+        fatal_error(
+            f'{constraint} "{unsupported}" is not supported by {packagename}.'
+        )
 
     install_package_dependencies(flags, paths, args)
 
@@ -770,7 +683,16 @@ def update_package(
     else:
         log.debug("Not in the main repo")
 
-    check_for_satisfied_package_requirements(paths, args[0], flags.force)
+    (
+        satisfied,
+        constraint,
+        unsupported,
+    ) = check_for_satisfied_package_requirements(paths, args[0], flags.force)
+
+    if not satisfied:
+        fatal_error(
+            f'{constraint} "{unsupported}" is not supported by {args[0]}.'
+        )
 
     install_package_dependencies(flags, paths, args)
 
@@ -826,7 +748,16 @@ def uninstall_package(
         )
         move_metadata_to_dot_avalon_folder(args[0], paths)
 
-    check_for_satisfied_package_requirements(paths, args[0], flags.force)
+    (
+        satisfied,
+        constraint,
+        unsupported,
+    ) = check_for_satisfied_package_requirements(paths, args[0], flags.force)
+
+    if not satisfied:
+        fatal_error(
+            f'{constraint} "{unsupported}" is not supported by {args[0]}.'
+        )
 
     pkg = get_package_metadata(paths, args[0])
     log.note("Uninstalling.....")

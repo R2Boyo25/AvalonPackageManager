@@ -5,6 +5,7 @@ Functions for retrieving and interacting with package metadata.
 import json
 import sys
 import os
+import shutil
 
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,7 @@ import kazparse
 from apm import log
 from apm.log import fatal_error
 from apm.package import NPackage
+from .case.case import getCaseInsensitivePath
 
 
 def get_local_package_metadata(
@@ -197,6 +199,34 @@ def is_avalon_package(paths: dict[str, Path], pkgname: str) -> bool:
     """Checks whether metadata is accessible for the package."""
 
     return bool(get_package_metadata(paths, pkgname))
+
+
+def move_metadata_to_dot_avalon_folder(
+    pkgname: str, paths: dict[str, Path]
+) -> None:
+    """Copy metadata for package to paths["src"]/packagename/.avalon"""
+
+    log.debug(
+        "Copying package metadata from the metadata repo for",
+        pkgname,
+        "into the package.",
+    )
+
+    shutil.rmtree(
+        log.debug(str(paths["src"] / pkgname / ".avalon")), ignore_errors=True
+    )
+
+    if is_in_metadata_repository(pkgname, paths):
+        log.debug(
+            "Copying metadata from",
+            getCaseInsensitivePath(str(paths["cache"] / pkgname)),
+            "to",
+            str(paths["src"] / pkgname / ".avalon"),
+        )
+        shutil.copytree(
+            getCaseInsensitivePath(str(paths["cache"] / pkgname)),
+            str(paths["src"] / pkgname / ".avalon"),
+        )
 
 
 def update_metadata_cache(

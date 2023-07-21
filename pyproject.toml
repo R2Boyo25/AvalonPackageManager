@@ -13,6 +13,7 @@ requests = "^2.31.0"
 keepachangelog = "^1.0.0"
 semver = "^3.0.1"
 gitignore-parser = "^0.1.4"
+kazparse = {git = "https://github.com/R2Boyo25/cliparse.git"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
