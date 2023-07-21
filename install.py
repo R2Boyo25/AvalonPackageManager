@@ -21,7 +21,9 @@ def install_pip_dependency(*args: str) -> int:
 
     user_flag = " --user" if on_gentoo else ""
 
-    return os.system(f"python3 -m pip install{user_flag} {' '.join(args)}")  # nosec
+    return os.system(
+        f"python3 -m pip install{user_flag} {' '.join(args)}"
+    )  # nosec
 
 
 # Check if poetry is installed, if not, install it.  Poetry is needed
@@ -55,7 +57,9 @@ print("Installing APM using the downloaded APM...")
 
 # Run the 'apm' module with the arguments passed in the script's
 # command line (sys.argv)
-result = os.system(f"python3 -m apm {' '.join(sys.argv[1:])} install .")  # nosec
+result = os.system(
+    f"python3 -m apm {' '.join(sys.argv[1:])} install ."
+)  # nosec
 
 if result:
     # If the installation failed, print an error message and exit the

@@ -12,7 +12,9 @@ xdg_path = Path(os.environ.get("HOME", "~")).expanduser()
 xdg_config_dir = Path(
     os.environ.get("XDG_CONFIG_HOME", xdg_path / ".config")
 ).expanduser()
-xdg_cache_dir = Path(os.environ.get("XDG_CACHE_HOME", xdg_path / ".cache")).expanduser()
+xdg_cache_dir = Path(
+    os.environ.get("XDG_CACHE_HOME", xdg_path / ".cache")
+).expanduser()
 temp_dir = Path(
     os.environ.get(
         "TMPDIR", os.environ.get("TEMP", os.environ.get("TMP", "/tmp"))

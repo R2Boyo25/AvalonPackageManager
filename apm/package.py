@@ -1,9 +1,15 @@
+"""
+Contains NPackage.
+"""
+
 from typing import Any, Iterable
 
 
 class NPackage:
-    def __init__(self, d: dict[Any, Any]):
-        self.idict = d
+    """Wrapper around JSON."""
+
+    def __init__(self, data: dict[Any, Any]):
+        self.idict = data
 
     def __getitem__(self, item: Any) -> None | Any:
         try:
@@ -16,10 +22,12 @@ class NPackage:
         self.idict[item] = value
 
     def keys(self) -> Iterable[Any]:
+        """Returns the keys of the internal dictionary."""
         return self.idict.keys()
 
-    def get(self, item: Any, default: Any | None = None) -> None | Any:
-        return self.idict.get(item, default)
+    def get(self, key: Any, default: Any | None = None) -> None | Any:
+        """Return the value for key or return default if it doesn't exist."""
+        return self.idict.get(key, default)
 
     def __str__(self) -> str:
         return str(self.idict)

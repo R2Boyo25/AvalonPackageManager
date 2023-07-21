@@ -1,3 +1,7 @@
+"""
+Functions for interacting with package changelogs using the keepachangelog format.
+"""
+
 import subprocess  # nosec B404
 import re
 import datetime
@@ -7,9 +11,9 @@ from pathlib import Path
 from typing import Optional, Generator, Dict, List, Any, Tuple, Union, Iterable
 
 import keepachangelog  # type: ignore
-import semver  # type: ignore
+import semver
 
-import apm.path as path
+from apm import path, log
 from .case.case import getCaseInsensitivePath
 from .log import debug, error
 
@@ -19,7 +23,7 @@ Changelog = Dict[str, Union[str, List[str], Dict[str, Optional[int]]]]
 
 def get_changelog_path(package_dir: Path) -> Optional[Path]:
     """
-    Get case insensitive path to `CHANGELOG.MD` in `package_dir`
+    Get case insensitive path to `CHANGELOG.MD` in `package_dir`.
 
     Recursively traverses upwards in the directory tree until
     it finds the file.
@@ -67,7 +71,7 @@ def current_version(package_dir: Path) -> Optional[semver.VersionInfo]:
 
     versions = list(chlog.keys())
 
-    if not len(versions):
+    if len(versions) == 0:
         debug("[Changelog] CHANGELOG.MD has no versions.")
         return None
 
@@ -102,85 +106,103 @@ def inline_code(match: re.Match[str]) -> str:
 
 
 # Function to prettify changelogs for display
-def prettify_changelogs(logs: Iterable[Tuple[str, Iterable[Changelog]]]) -> bytes:
+def prettify_changelogs(
+    logs: Iterable[Tuple[str, Iterable[Changelog]]]
+) -> bytes:
     """Prettify changelogs for display"""
 
     buf = ""
-    END_SECTION = "\033[0m\n\n"
+    end_section = "\033[0m\n\n"
 
     for program in logs:
-        if program[1]:
-            if program[0]:
-                buf += "\033[1;4m"
-                buf += program[0]
-                buf += END_SECTION
+        if not program[1]:
+            continue
 
-            for version in program[1]:
-                buf += "\033[1;4m"
-                buf += str(version["version"])
-                buf += " \033[2m"
-                buf += str(version["release_date"]).replace(
-                    "[yanked]", "\033[31m[YANKED]\033[37m"
-                )
-                buf += END_SECTION
+        if program[0]:
+            buf += "\033[1;4m"
+            buf += program[0]
+            buf += end_section
 
-                for changes in [
-                    "deprecated",
-                    "added",
-                    "changed",
-                    "removed",
-                    "fixed",
-                    "security",
-                ]:
-                    if changes in version:
-                        buf += "\033[4m"
-                        buf += changes.title()
-                        buf += "\033[0m\n"
+        for version in program[1]:
+            buf += "\033[1;4m"
+            buf += str(version["version"])
+            buf += " \033[2m"
+            buf += str(version["release_date"]).replace(
+                "[yanked]", "\033[31m[YANKED]\033[37m"
+            )
+            buf += end_section
 
-                        for change in version[changes]:
-                            buf += " - "
-                            buf += re.sub("`(.*?)`", inline_code, change)
-                            buf += "\n"
+            for changes in [
+                "deprecated",
+                "added",
+                "changed",
+                "removed",
+                "fixed",
+                "security",
+            ]:
+                if changes in version:
+                    buf += "\033[4m"
+                    buf += changes.title()
+                    buf += "\033[0m\n"
 
+                    for change in version[changes]:
+                        buf += " - "
+                        buf += re.sub("`(.*?)`", inline_code, change)
                         buf += "\n"
+
+                    buf += "\n"
 
     return bytes(buf, "utf-8")
 
 
-# Function to display changelogs in a paginated view using 'less'
-def display_changelogs(logs: Iterable[Tuple[str, Iterable[Changelog]]]) -> None:
+def display_changelogs(
+    logs: Iterable[Tuple[str, Iterable[Changelog]]]
+) -> None:
+    """display changelogs in a paginated view using 'less'."""
 
     i = prettify_changelogs(logs)
-    if len(i) > 0:
-        p = subprocess.Popen(["/bin/less", "-r"], stdin=subprocess.PIPE)  # nosec B603
 
-        p.communicate(input=i)
+    if len(i) <= 0:
+        return
 
-        p.wait()
+    with subprocess.Popen(
+        ["/bin/less", "-r"], stdin=subprocess.PIPE
+    ) as less_process:  # nosec B603
+        less_process.communicate(input=i)
+
+        less_process.wait()
 
 
-# Function to retrieve the latest version for a list of packages
 def get_package_versions(
     packages: List[str],
 ) -> List[Tuple[str, semver.VersionInfo]]:
+    """Retrieve the latest version for a list of packages."""
+
     out = []
 
     for package in packages:
         ver = current_version(path.paths["src"] / package.lower())
-        out.append((package, ver if ver else semver.VersionInfo.parse("0.0.0")))
+        out.append(
+            (package, ver if ver else semver.VersionInfo.parse("0.0.0"))
+        )
 
     return out
 
 
-# Function to display changelogs for specific packages and versions
 def display_changelogs_packages(
-    packages: Iterable[Tuple[str, Optional[semver.VersionInfo]]]
+    packages: Iterable[Tuple[str, semver.VersionInfo]]
 ) -> None:
+    """Display changelogs for specific packages and versions."""
+
     display_changelogs(
         [
             (
                 package,
-                list(get_changes_after(path.paths["src"] / package.lower(), startver)),
+                list(
+                    get_changes_after(
+                        path.paths["src"] / package.lower(), startver
+                    )
+                ),
             )
             for package, startver in packages
         ]
@@ -200,11 +222,15 @@ def bump_version(part: Optional[str] = None) -> None:
             #   "Release content must be provided within changelog
             #   Unreleased section."
 
-            error("No changes provided in `Unreleased` section of `CHANGELOG.MD`")
-            sys.exit(1)
+            log.fatal_error(
+                "No changes provided in `Unreleased` section of `CHANGELOG.MD`"
+            )
+
         return
 
-    error("`release bump` does not support `part` yet (`keepachangelog` issue).")
+    error(
+        "`release bump` does not support `part` yet (`keepachangelog` issue)."
+    )
     sys.exit(1)
 
     if part not in ["major", "minor", "patch"]:
@@ -214,21 +240,26 @@ def bump_version(part: Optional[str] = None) -> None:
     parsed_changelog = get_parsed_changelog(".")
 
     if parsed_changelog is not None:
-        error("There exists no parseable `CHANGELOG.MD` in the current project.")
+        error(
+            "There exists no parseable `CHANGELOG.MD` in the current project."
+        )
         sys.exit(1)
 
     next_version = current_version(".").next_version(part=part)
 
     parsed_changelog[str(next_version)] = {
         "version": str(next_version),
-        "release_date": datetime.datetime.utcnow().isoformat(" ").split(" ")[0],
+        "release_date": datetime.datetime.utcnow()
+        .isoformat(" ")
+        .split(" ")[0],
     }
 
     # TODO: save to file
 
 
-# Function to display all changelogs for a list of packages
 def display_all_changelogs(packages: List[str]) -> None:
+    """Display all changelogs for a list of packages."""
+
     display_changelogs(
         [
             (

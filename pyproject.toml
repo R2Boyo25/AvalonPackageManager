@@ -17,8 +17,8 @@ gitignore-parser = "^0.1.4"
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
 mypy = "^1.4.1"
-flake8 = "^6.0.0"
 pre-commit = "^3.3.3"
+pylint = "^2.17.4"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

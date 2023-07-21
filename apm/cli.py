@@ -7,22 +7,24 @@ from pathlib import Path
 
 import os
 import sys
-import semver  # type: ignore
+import semver
 
 from kazparse import Parse
 import kazparse
 from apm import path
 from .pm_util import (
-    installPackage,
-    uninstallPackage,
-    redoBin,
-    updatePackage,
-    installed,
+    install_package,
+    uninstall_package,
+    redo_symlinks_for_package,
+    update_package,
     download_package_source,
+)
+from .metadata import (
     update_metadata_cache,
     get_installed_repos,
+    list_installed,
 )
-from .version import version, cyear
+from .version import VERSION, COPYRIGHT_YEAR
 from .changelog import (
     get_package_versions,
     display_changelogs_packages,
@@ -35,7 +37,7 @@ from .changelog import (
 from .case.case import getCaseInsensitivePath
 
 # Set up some initial information and configurations
-before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
+before = f"Avalon Package Manager V{VERSION} Copyright (C) {COPYRIGHT_YEAR} R2Boyo25"
 
 # initalize KazParse parser
 p = Parse(
@@ -141,7 +143,9 @@ def release_submenu(_: Any, __: Any, *args: str) -> None:
 
     # Define a command function 'releaseChange' within the 'release' submenu
     @release_parser.command("change")
-    def release_edit_changelog(_flags: kazparse.flags.Flags, _args: str) -> None:
+    def release_edit_changelog(
+        _flags: kazparse.flags.Flags, _args: str
+    ) -> None:
         "Edit `CHANGELOG.MD` w/ `$VISUAL_EDITOR`"
 
         # Ensure that the 'CHANGELOG.MD' file exists in the current
@@ -175,7 +179,9 @@ def package_view_changes(
 
     # If no arguments are provided, show changes since version '0.0.0'
     if len(args) == 0:
-        changes = get_changes_after(Path("."), semver.VersionInfo.parse("0.0.0"))
+        changes = get_changes_after(
+            Path("."), semver.VersionInfo.parse("0.0.0")
+        )
         display_changelogs([("", changes)])
         return
 
@@ -213,7 +219,9 @@ def generate_package(
     _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
     "Generate a package using AvalonGen"
-    os.system(str(paths["bin"]) + "/avalongen " + " ".join([f'"{i}"' for i in args]))
+    os.system(
+        str(paths["bin"]) + "/avalongen " + " ".join([f'"{i}"' for i in args])
+    )
 
 
 # Define a command function for the 'install' command
@@ -223,7 +231,7 @@ def cli_install_package(
 ) -> None:
     "Installs a package"
 
-    installPackage(flags, paths, list(args))
+    install_package(flags, paths, list(args))
 
     # Display changelogs for installed packages
     display_changes(flags.machine)
@@ -236,7 +244,7 @@ def cli_uninstall_package(
 ) -> None:
     "Uninstalls a package"
 
-    uninstallPackage(flags, paths, list(args))
+    uninstall_package(flags, paths, list(args))
 
 
 # Define a command function for the 'update' command (hidden)
@@ -247,7 +255,7 @@ def cli_update_package(
     "Update to the newest version of a repo, \
     then recompile + reinstall program"
 
-    updatePackage(flags, paths, *args)
+    update_package(flags, paths, *args)
 
     # Display changelogs for installed packages
     display_changes(flags.machine)
@@ -298,7 +306,7 @@ def cli_redo_bin(
     flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
     "Regenerate symlinks for a package"
-    redoBin(flags, paths, *args)
+    redo_symlinks_for_package(flags, paths, *args)
 
 
 # Define a command function for the 'installed' command
@@ -309,7 +317,7 @@ def cli_list_nstalled(
     "List installed packages"
 
     # Call the 'installed' function to list installed packages
-    installed(flags, paths, *args)
+    list_installed(flags, paths, *args)
 
 
 # Define a command function for the 'src' command

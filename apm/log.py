@@ -3,8 +3,10 @@ Logging utilities for Avalon.
 """
 
 import os
-from typing import Optional
+import sys
+
 from enum import Enum
+from pathlib import Path
 
 IS_SILENT = False
 IS_DEBUG = False
@@ -20,66 +22,57 @@ class Colors(Enum):
     DEBUG = 5
 
 
-def colorprint(*text: str, color: Colors = Colors.OK) -> None:
+def colorprint(*text: str | Path, color: Colors = Colors.OK) -> str:
     "Print `text` with the color `color` using `tput`"
 
     if not IS_SILENT:
         os.system(f"tput setaf {color.value}")  # nosec
 
-        print(" ".join(text))
+        joined_text = " ".join(map(str, text))
+
+        print(joined_text)
 
         os.system("tput sgr0")  # nosec
 
+        return joined_text
 
-def success(*text: str) -> str:
+    return ""
+
+
+def success(*text: str | Path) -> str:
     "Print a successful message"
 
-    colorprint(*text, color=Colors.SUCCESS)
-
-    return " ".join(text)
+    return colorprint(*text, color=Colors.SUCCESS)
 
 
-def error(*text: str) -> str:
+def error(*text: str | Path) -> str:
     "Print an error"
 
-    colorprint(*text, color=Colors.FAIL)
-
-    return " ".join(text)
+    return colorprint(*text, color=Colors.FAIL)
 
 
-def note(*text: str) -> str:
+def fatal_error(*text: str | Path) -> None:
+    "Print an error and exit."
+    error(*text)
+    sys.exit(1)
+
+
+def note(*text: str | Path) -> str:
     "Print a note"
 
-    colorprint(*text, color=Colors.OK)
-
-    return " ".join(text)
+    return colorprint(*text, color=Colors.OK)
 
 
-def warn(*text: str) -> str:
+def warn(*text: str | Path) -> str:
     "Print a warning"
 
-    colorprint(*text, color=Colors.WARN)
-
-    return " ".join(text)
+    return colorprint(*text, color=Colors.WARN)
 
 
-def debug(*text: str) -> str:
+def debug(*text: str | Path) -> str:
     "Print a debug message, hidden if IS_DEBUG is False"
 
     if IS_DEBUG:
-        colorprint(*text, color=Colors.DEBUG)
+        return colorprint(*text, color=Colors.DEBUG)
 
-    return " ".join(text)
-
-
-def silent(toset: Optional[bool] = None) -> None:
-    "Silence the output."
-
-    global IS_SILENT
-
-    if toset is None:
-
-        IS_SILENT = not IS_SILENT
-        return
-
-    IS_SILENT = toset
+    return " ".join(map(str, text))
