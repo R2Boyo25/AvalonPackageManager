@@ -8,37 +8,40 @@ import sys
 from enum import Enum
 from pathlib import Path
 
-IS_SILENT = False
-IS_DEBUG = False
+IS_SILENT = False # Flag to control whether to print messages or not
+IS_DEBUG = False # Flag to control whether to print debug messages or not
 
 
+# Enum class to represent text colors
 class Colors(Enum):
     "tput setaf colors"
 
-    OK = 6
-    WARN = 3
-    SUCCESS = 2
-    FAIL = 1
-    DEBUG = 5
+    OK = 6       # Success color
+    WARN = 3     # Warning color
+    SUCCESS = 2  # Successful message color
+    FAIL = 1     # Error color
+    DEBUG = 5    # Debug message color
 
 
+# Function to print colored text
 def colorprint(*text: str | Path, color: Colors = Colors.OK) -> str:
     "Print `text` with the color `color` using `tput`"
 
-    if not IS_SILENT:
-        os.system(f"tput setaf {color.value}")  # nosec
+    if not IS_SILENT:  # Only print if not in silent mode
+        os.system(f"tput setaf {color.value}")  # Set the text color using `tput`  # nosec
 
-        joined_text = " ".join(map(str, text))
+        joined_text = " ".join(map(str, text))  # Convert the input arguments to a single string
 
-        print(joined_text)
+        print(joined_text)  # Print the colored text
 
-        os.system("tput sgr0")  # nosec
+        os.system("tput sgr0")  # Reset the text color using `tput`  # nosec
 
-        return joined_text
+        return joined_text  # Return the colored text
 
-    return ""
+    return ""  # Return an empty string if in silent mode
 
 
+# Helper functions for printing different types of messages with specific colors
 def success(*text: str | Path) -> str:
     "Print a successful message"
 
@@ -72,7 +75,7 @@ def warn(*text: str | Path) -> str:
 def debug(*text: str | Path) -> str:
     "Print a debug message, hidden if IS_DEBUG is False"
 
-    if IS_DEBUG:
+    if IS_DEBUG: # Only print debug messages if in debug mode
         return colorprint(*text, color=Colors.DEBUG)
 
-    return " ".join(map(str, text))
+    return " ".join(map(str, text)) # If not in debug mode, return the input arguments as a single string
