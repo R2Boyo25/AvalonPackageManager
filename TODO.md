@@ -1,7 +1,7 @@
 - [x] Compiling compiled languages and storing binaries in `~/.avalonPM/bin/` (done)
 - [x] Downloading source code to `~/.avalonPM/src/` (done)
 - [x] Ability to add instructions for specific repositories in a .avalon folder (done)
-- [x] A central repository with installation/compilation instructions for commonly used packages 
+- [x] A central repository with installation/compilation instructions for commonly used packages
     (hopefully maintained by community if the program gets big enough) (Done)
 - [x] Specify supported arches and distros (done)
 - [x] Versioning
@@ -17,3 +17,6 @@
 - [ ] add `am_root()` for the dep stuff
 - [ ] set up the ability to use Virtual Environments for Python packages.
 - [ ] Add the ability to specify whether to treat flags as args per-command in CLIParse
+- [ ] Replace pkgname with package_name in the files
+- [ ] replace args[0] with package_name in the files where possible
+- [ ] Rename paths['cache'] to paths['metadata']

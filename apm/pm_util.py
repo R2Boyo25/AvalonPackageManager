@@ -1,35 +1,45 @@
+"""
+Main utilities for the package manager.
+
+TODO: separate into smaller files
+"""
+
 #!/usr/bin/python3
 
-import requests
 import os
+import sys
 import shutil
 import json
 import getpass
 import platform
-import distro
 import filecmp
-import subprocess
+import subprocess  # nosec B404
 
-import kazparse
-from typing import Any
+from typing import Any, Literal
 from pathlib import Path
 
-import apm.log as log
+import distro
+import requests
+import kazparse
+
+from apm import log
 from .package import NPackage
 from .case.case import getCaseInsensitivePath
 
 
-class e404(Exception):
-    pass
+# class e404(Exception):
+#    pass
 
 
 def error(*text: str) -> None:
+    "Print an error and exit."
     log.error(*text)
-    quit()
+    sys.exit(1)
 
 
-def copyFile(src: Path, dst: Path) -> None:
-    "Copy a file only if files are not the same or the destination does not exist"
+def copy_file(src: Path, dst: Path) -> None:
+    "Copy a file only if files are not the same or the destination\
+    does not exist"
     if not os.path.dirname(dst).strip() == "":
         os.makedirs(os.path.dirname(dst), exist_ok=True)
 
@@ -39,24 +49,10 @@ def copyFile(src: Path, dst: Path) -> None:
     else:
         if os.path.exists(src):
             for file in os.listdir(src):
-                copyFile(src / file, dst / file)
+                copy_file(src / file, dst / file)
 
 
-def getRepos(user: str, cache: bool = True) -> Any:
-    if cache:
-        pass
-
-    else:
-        pass
-
-    r = requests.request(
-        "GET", "https://api.github.com/users/" + user + "/repos"
-    ).json()
-
-    return r
-
-
-def getInstalledRepos(paths: dict[str, Path]) -> list[str]:
+def get_installed_repos(paths: dict[str, Path]) -> list[str]:
     "Get all installed programs"
     programs = []
 
@@ -67,31 +63,29 @@ def getInstalledRepos(paths: dict[str, Path]) -> list[str]:
     return programs
 
 
-def getVersion(paths: dict[str, Path], repo: str) -> str | bool:
+def get_package_version(paths: dict[str, Path], repo: str) -> str | None:
     "Get version of package"
 
-    pkg = getCachedPackageRepoInfo(paths, repo)
+    pkg = get_local_package_metadata(paths, repo)
 
-    if pkg:
-        if "version" in pkg:
-            return str(pkg["version"])
+    if not pkg:
+        return None
 
-        else:
-            return False
+    if "version" not in pkg:
+        return None
 
-    else:
-        return False
+    return str(pkg["version"])
 
 
-def getInstalled(paths: dict[str, Path]) -> list[str]:
+def get_installed_packages_and_versions(paths: dict[str, Path]) -> list[str]:
     "Get all installed programs with versions"
     programs = []
 
-    for repo in getInstalledRepos(paths):
-        v = getVersion(paths, repo)
+    for repo in get_installed_repos(paths):
+        version = get_package_version(paths, repo)
 
-        if v:
-            programs.append(f"{repo}=={v}")
+        if version is not None:
+            programs.append(f"{repo}=={version}")
 
         else:
             programs.append(repo)
@@ -99,155 +93,135 @@ def getInstalled(paths: dict[str, Path]) -> list[str]:
     return programs
 
 
-def getCachedPackageMainRepoInfo(paths: dict[str, Path], pkgname: str) -> Any:
-    if Path(getCaseInsensitivePath(str(paths["cache"] / pkgname / "package"))).exists():
-        with Path(
-            getCaseInsensitivePath(str(paths["cache"] / pkgname / "package"))
-        ).open("r") as pkgfile:
-            try:
-                return json.loads(pkgfile.read())
+def get_local_package_metadata(
+    paths: dict[str, Path], pkgname: str
+) -> dict[Any, Any] | None:
+    "Attempt to retrieve metadata locally, if possible."
 
-            except Exception as e:
-                log.debug(pkgfile.read())
-                raise e
+    locations = [
+        paths["src"] / pkgname / ".avalon/package",
+        paths["cache"] / pkgname / "package",
+    ]
 
-    else:
-        return False
+    for location in locations:
+        if not location.exists():
+            continue
 
+        try:
+            with location.open("r") as metadata_file:
+                return dict(json.load(metadata_file))
 
-def getCachedPackageRepoInfo(paths: dict[str, Path], pkgname: str) -> Any:
-    if (paths["src"] / pkgname / ".avalon/package").exists():
-        with (paths["src"] / pkgname / ".avalon/package").open("r") as pkgfile:
-            try:
-                return json.loads(pkgfile.read())
+        except json.decoder.JSONDecodeError as exception:
+            log.warn(
+                "Failed to parse package metadata at",
+                str(location),
+                "reason:\n" + str(exception),
+            )
 
-            except Exception as e:
-                log.debug("Content: " + pkgfile.read())
-                raise e
-
-    else:
-        return False
-
-
-def getCachedPackageInfo(paths: dict[str, Path], pkgname: str) -> Any:
-    if getCachedPackageMainRepoInfo(paths, pkgname):
-        return getCachedPackageMainRepoInfo(paths, pkgname)
-
-    elif a := getCachedPackageRepoInfo(paths, pkgname):
-        return a
-
-    log.debug(f"{pkgname} is not cached")
-    return False
+    log.debug(f"The metadata for {pkgname} is not available locally.")
+    return None
 
 
-def getRepoPackageInfo(
+def get_remote_package_metadata(
     pkgname: str, commit: str | None = None, branch: str | None = None
-) -> Any:
-    if not branch and not commit:
-        r = requests.get(
-            log.debug(
-                f"https://raw.githubusercontent.com/{pkgname}/master/.avalon/package"
-            )
+) -> dict[Any, Any] | None:
+    "Attempt to retrive metadata from GitHub, if possible."
+
+    package_url = "https://raw.githubusercontent.com/{package}/{branch}/.avalon/package"
+
+    package_urls = [
+        f"https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package",  # pylint: disable=C0301
+        package_url.format(package=pkgname, branch="main"),
+        package_url.format(package=pkgname, branch="master"),
+    ]
+
+    if branch and commit:
+        raise NotImplementedError(
+            "Branch and commit cannot be specified, fix this later."
         )
 
-        log.debug(r.text)
+    if branch:
+        package_urls.append(package_url.format(package=pkgname, branch=branch))
 
-        if r.status_code == 404:
-            r = requests.get(
-                log.debug(
-                    f"https://raw.githubusercontent.com/{pkgname}/main/.avalon/package"
-                )
-            )
-            log.debug(r.text)
+    if commit:
+        package_urls.append(package_url.format(package=pkgname, branch=commit))
 
-            if r.status_code == 404:
-                raise e404("Repo")
+    for url in package_urls:
+        log.debug("Trying URL:", url)
 
-            return r.json()
-
-        return r.json()
-
-    else:
-        if branch:
-            r = requests.get(
-                log.debug(
-                    f"https://raw.githubusercontent.com/{pkgname}/{branch}/.avalon/package"
-                )
-            )
-            log.debug(r.text)
-
-            if r.status_code == 404:
-                raise e404("Branch")
-
-            return r.json()
-
-        elif commit:
-            r = requests.get(
-                log.debug(
-                    f"https://raw.githubusercontent.com/{pkgname}/{commit}/.avalon/package"
-                )
-            )
-            log.debug(r.text)
-
-            if r.status_code == 404:
-                raise e404("Branch")
-
-            return r.json()
-
-
-def getMainRepoPackageInfo(pkgname: str) -> Any:
-    r = requests.get(
-        log.debug(
-            f"https://raw.githubusercontent.com/R2Boyo25/AvalonPMPackages/master/{pkgname}/package"
+        result = requests.get(
+            url,
+            timeout=10,
         )
-    )
-    log.debug(r.text)
 
-    if r.status_code == 404:
-        raise e404("Main")
+        log.debug(result.text)
 
-    return r.json()
+        if result.status_code == 404:
+            continue
+
+        try:
+            return dict(result.json())
+
+        except json.decoder.JSONDecodeError as exception:
+            log.warn(
+                "Failed to parse package metadata at",
+                url,
+                "reason:\n" + str(exception),
+            )
+
+    return None
 
 
-def getPackageInfo(
+def get_package_metadata(
     paths: dict[str, Path],
     pkgname: str,
     commit: str | None = None,
     branch: str | None = None,
 ) -> NPackage:
+    "Attempt to retrive the package's metadata"
+
     log.debug("Getting package info for:", pkgname)
 
-    if getCachedPackageInfo(paths, pkgname):
-        return NPackage(getCachedPackageInfo(paths, pkgname))
+    info = get_local_package_metadata(paths, pkgname)
+
+    if info is None:
+        info = get_remote_package_metadata(pkgname, commit=commit, branch=branch)
+
+    if info is None:
+        error("No valid metadata available for", pkgname)
+        sys.exit(1)
+
+    return NPackage(info)
+
+
+def is_in_metadata_repository(pkgname: str, paths: dict[str, Path]) -> bool:
+    "Check if the metadata is available in the metadata repository."
+
+    status = (paths["cache"] / pkgname / "package").exists()
+
+    if status:
+        log.debug(f"{pkgname} was found in the main repository cache.")
 
     else:
-        try:  # TODO: WHY WOULD YOU USE EXCEPTIONS, PAST ME?
-            return NPackage(getRepoPackageInfo(pkgname, commit=commit, branch=branch))
+        log.debug(f"{pkgname} was not found in the main repository cache.")
 
-        except:
-            return NPackage(getMainRepoPackageInfo(pkgname))
+    return status
 
 
-def isInMainRepo(pkgname: str, paths: dict[str, Path]) -> bool:
-    if getCachedPackageMainRepoInfo(paths, pkgname):
-        log.debug("Found in main repo cache")
-        return True
+def download_metadata_repository(
+    paths: dict[str, Path], do_not_update: bool = True
+) -> None:
+    "Download the metadata repository using git. If if_missing"
 
-    log.debug("Not found in main repo cache")
-    return False
-
-
-def downloadMainRepo(paths: dict[str, Path]) -> None:
-    if (paths["cache"] / "R2Boyo25").exists():
+    if not do_not_update and (paths["cache"] / "R2Boyo25").exists():
         os.system(log.debug(f"cd {paths['cache']}; git pull"))
+        return
 
-    else:
-        cachedir = paths["cache"]
-        os.system(
-            log.debug(
-                f'git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages "{cachedir}" -q'
-            )
+    os.system(
+        log.debug(
+            f'git clone --depth 1 https://github.com/r2boyo25/AvalonPMPackages "{paths["cache"]}" -q'  # pylint: disable=C0301
         )
+    )
 
 
 def moveMainRepoToAvalonFolder(pkgname: str, paths: dict[str, Path]) -> None:
@@ -261,7 +235,7 @@ def moveMainRepoToAvalonFolder(pkgname: str, paths: dict[str, Path]) -> None:
         log.debug(str(paths["src"] / pkgname / ".avalon")), ignore_errors=True
     )
 
-    if isInMainRepo(pkgname, paths):
+    if is_in_metadata_repository(pkgname, paths):
         log.debug(
             "Copying metadata from",
             getCaseInsensitivePath(str(paths["cache"] / pkgname)),
@@ -275,7 +249,7 @@ def moveMainRepoToAvalonFolder(pkgname: str, paths: dict[str, Path]) -> None:
 
 
 def isAvalonPackage(paths: dict[str, Path], pkgname: str) -> bool:
-    return bool(getCachedPackageRepoInfo(paths, pkgname))
+    return bool(get_package_metadata(paths, pkgname))
 
 
 def getDistro() -> str:
@@ -312,7 +286,7 @@ def archIsSupported(pkg: Any) -> bool:
 
 
 def checkReqs(paths: dict[str, Path], pkgname: str, force: bool) -> None:
-    pkg = getPackageInfo(paths, pkgname)
+    pkg = get_package_metadata(paths, pkgname)
 
     if force:
         if not archIsSupported(pkg):
@@ -322,7 +296,8 @@ def checkReqs(paths: dict[str, Path], pkgname: str, force: bool) -> None:
 
         if not distroIsSupported(pkg):
             log.warn(
-                f"Distro {getDistro()} not supported by package, continuing anyway due to forced mode"
+                f"Distro {getDistro()} not supported by package, \
+                continuing anyway due to forced mode"
             )
 
         return
@@ -400,7 +375,7 @@ def rmFromBin(
     log.debug("RMBIN:", packagename)
 
     if not pkg:
-        pkg = getPackageInfo(paths, packagename, commit, branch)
+        pkg = get_package_metadata(paths, packagename, commit, branch)
 
     if "binname" in pkg.keys():
         log.debug(str(paths["bin"] / str(pkg["binname"])))
@@ -416,22 +391,23 @@ def rmFromFiles(paths: dict[str, Path], packagename: str) -> None:
 
 
 def mvBinToBin(
-    paths: dict[str, Path], packagename: str, binFile: str, binName: Path
+    paths: dict[str, Path], package_name: str, bin_file: str, bin_name: Path
 ) -> None:
     try:
         shutil.copyfile(
-            paths["src"] / packagename / binFile, paths["files"] / packagename / binName
+            paths["src"] / package_name / bin_file,
+            paths["files"] / package_name / bin_name,
         )
 
-    except:
-        pass
+    except Exception:
+        log.warn(f"Failed to copy binary to {paths['files']}")
 
-    if (paths["bin"] / binName).exists():
-        os.remove(paths["bin"] / binName)
+    if (paths["bin"] / bin_name).exists():
+        os.remove(paths["bin"] / bin_name)
 
-    os.symlink(paths["files"] / packagename / binFile, paths["bin"] / binName)
+    os.symlink(paths["files"] / package_name / bin_file, paths["bin"] / bin_name)
 
-    (paths["files"] / packagename / binName).chmod(0o755)
+    (paths["files"] / package_name / bin_name).chmod(0o755)
 
 
 def copyFilesToFiles(
@@ -441,14 +417,14 @@ def copyFilesToFiles(
 
     if files != ["all"]:
         for file in files:
-            copyFile(
+            copy_file(
                 paths["src"] / pkgname / file,
                 paths["files"] / pkgname / file,
             )
 
     else:
         for file in os.listdir(paths["src"] / pkgname):
-            copyFile(
+            copy_file(
                 paths["src"] / pkgname / file,
                 paths["files"] / pkgname / file,
             )
@@ -456,8 +432,10 @@ def copyFilesToFiles(
 
 def getAptInstalled() -> list[str]:
     aptinstalled = []
-    o = subprocess.check_output("dpkg -l".split()).decode()
-    for i in o.split("\n"):
+
+    dpkg_output = subprocess.check_output("dpkg -l".split()).decode()  # nosec B603
+
+    for i in dpkg_output.split("\n"):
         if i.strip() != "" and i.startswith("ii"):
             try:
                 i = i.split("  ")[1]
@@ -465,7 +443,7 @@ def getAptInstalled() -> list[str]:
                 if i.strip() not in aptinstalled:
                     aptinstalled.append(i.strip())
 
-            except:
+            except Exception:
                 error(i)
 
     return aptinstalled
@@ -478,12 +456,15 @@ def aptFilter(deps: list[str]) -> list[str]:
     return list(filter(lambda dep: dep not in aptinstalled, deps))
 
 
-def installAptDeps(deps: dict[str, list[str]]) -> None:
-    try:
-        deps["apt"]
+def am_not_root() -> bool:
+    username = getpass.getuser()
 
-    except:
-        return
+    return username != "root" and not username.startswith("u0_a")
+
+
+def installAptDeps(deps: dict[str, list[str]]) -> None:
+    if "apt" not in deps:
+        return None
 
     if deps["apt"]:
         filtered_deps = aptFilter(deps["apt"])
@@ -493,14 +474,12 @@ def installAptDeps(deps: dict[str, list[str]]) -> None:
                 "Found apt dependencies, installing..... (this will require your password)"
             )
 
-            depss = " ".join(filtered_deps)
-            username = getpass.getuser()
+            joined_deps = " ".join(filtered_deps)
 
-            if username != "root" and not username.startswith("u0_a"):
-                os.system(log.debug(f"sudo apt install -y {depss}"))
+            sudo = "sudo " if am_not_root() else ""
 
-            else:
-                os.system(log.debug(f"apt install -y {depss}"))
+            if os.system(log.debug(f"{sudo}apt install -y {joined_deps}")):
+                error("apt subprocess encountered an error.")
 
 
 def installBuildDepDeps(deps: dict[str, list[str]]) -> None:
@@ -515,16 +494,13 @@ def installBuildDepDeps(deps: dict[str, list[str]]) -> None:
             "Found build-dep (apt) dependencies, installing..... (this will require your password)"
         )
 
-        depss = " ".join(deps["build-dep"])
+        joined_deps = " ".join(deps["build-dep"])
         username = getpass.getuser()
 
-        if username != "root" and not username.startswith("u0_a"):
-            if os.system(log.debug(f"sudo apt build-dep -y {depss}")):
-                error("apt error")
+        sudo = "sudo " if am_not_root() else ""
 
-        else:
-            if os.system(log.debug(f"apt build-dep -y {depss}")):
-                error("apt error")
+        if os.system(log.debug(f"{sudo}apt build-dep -y {joined_deps}")):
+            error("apt subprocess encountered an error.")
 
 
 def installAvalonDeps(
@@ -547,10 +523,10 @@ def installAvalonDeps(
         for dep in deps["avalon"]:
             if not (paths["files"] / dep.lower()).exists() or flags.update:
                 log.note("Installing", dep)
-                log.silent()
+                log.silent(True)
                 args[0] = dep
                 installPackage(flags, paths, args)
-                log.silent()
+                log.silent(False)
                 log.note("Installed", dep)
 
 
@@ -562,12 +538,12 @@ def installPipDeps(deps: dict[str, list[str]]) -> None:
         return
 
     log.note("Found pip dependencies, installing.....")
-    depss = " ".join(deps["pip"])
-    os.system(
-        log.debug(
-            f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} {depss}"
-        )
-    )
+    joined_deps = " ".join(deps["pip"])
+
+    on_gentoo = os.path.exists("/etc/portage")
+    user_flag = " --user" if on_gentoo else ""
+
+    os.system(log.debug(f"python3 -m pip install{user_flag} {joined_deps}"))
 
 
 def reqTxt(pkgname: str, paths: dict[str, Path]) -> None:
@@ -576,9 +552,15 @@ def reqTxt(pkgname: str, paths: dict[str, Path]) -> None:
 
     if (paths["src"] / pkgname / "requirements.txt").exists():
         log.note("Requirements.txt found, installing.....")
+
+        on_gentoo = os.path.exists("/etc/portage")
+        user_flag = " --user" if on_gentoo else ""
+
+        req_txt = paths["src"] / pkgname / "requirements.txt"
+
         os.system(
             log.debug(
-                f"python3 -m pip --disable-pip-version-check -q install{' --user' if os.path.exists('/etc/portage') else ''} -r {paths['src']}/{pkgname}/requirements.txt"
+                f"python3 -m pip --disable-pip-version-check -q install{user_flag} -r {req_txt}"
             )
         )
 
@@ -586,7 +568,7 @@ def reqTxt(pkgname: str, paths: dict[str, Path]) -> None:
 def installDeps(
     flags: kazparse.flags.Flags, paths: dict[str, Path], args: list[str]
 ) -> None:
-    pkg = getPackageInfo(paths, args[0])
+    pkg = get_package_metadata(paths, args[0])
 
     if pkg["deps"]:
         log.note("Found dependencies, installing.....")
@@ -632,7 +614,7 @@ def compilePackage(
     paths: dict[str, Path],
     flags: kazparse.flags.Flags,
 ) -> None:
-    pkg = getPackageInfo(paths, packagename)
+    pkg = get_package_metadata(paths, packagename)
     os.chdir(paths["src"] / packagename)
 
     (paths["files"] / packagename).mkdir(parents=True, exist_ok=True)
@@ -640,7 +622,8 @@ def compilePackage(
     if pkg["needsCompiled"]:
         if not pkg["binname"]:
             log.warn(
-                "Package needs compiled but there is no binname for Avalon to install, assuming installed by compile script....."
+                "Package needs compiled but there is no binname for Avalon to install, \
+                assuming installed by compile script....."
             )
 
         if pkg["compileScript"]:
@@ -648,7 +631,8 @@ def compilePackage(
 
             if runScript(
                 paths["src"] / packagename / pkg["compileScript"],
-                f"\"{paths['src'] / packagename}\" \"{pkg['binname']}\" \"{paths['files'] / packagename}\"",
+                f"\"{paths['src'] / packagename}\" \"{pkg['binname']}\" \
+                \"{paths['files'] / packagename}\"",
             ):
                 error("Compile script failed!")
 
@@ -676,7 +660,9 @@ def compilePackage(
         if pkg["needsCompiled"] or pkg["compileScript"] or pkg["binname"]:
             if runScript(
                 paths["src"] / packagename / pkg["installScript"],
-                f"\"{paths['files'] / packagename / str(pkg['binname'])}\" \"{paths['files'] / packagename}\" \"{paths['bin']}\" \"{paths['src']}\"",
+                f"\"{paths['files'] / packagename / str(pkg['binname'])}\" \
+                \"{paths['files'] / packagename}\" \
+                \"{paths['bin']}\" \"{paths['src']}\"",
             ):
                 error("Install script failed!")
 
@@ -703,7 +689,8 @@ def compilePackage(
 
     else:
         log.warn(
-            "No installation script found... Assuming installation beyond APM's autoinstaller isn't neccessary"
+            "No installation script found... Assuming \
+            installation beyond APM's autoinstaller isn't neccessary"
         )
 
 
@@ -717,7 +704,7 @@ def installLocalPackage(
     if not os.path.exists(tmppath):
         os.mkdir(tmppath)
 
-    log.isDebug = flags.debug
+    log.IS_DEBUG = flags.debug
 
     log.note("Unpacking package.....")
 
@@ -777,12 +764,11 @@ def installPackage(
         updatePackage(flags, paths, *args)
         return
 
-    log.isDebug = flags.debug
+    log.IS_DEBUG = flags.debug
 
     args[0] = args[0].lower()
 
-    if not os.path.exists(f"{paths['cache']}/R2Boyo25"):
-        downloadMainRepo(paths)
+    download_metadata_repository(paths)
 
     packagename = args[0]
 
@@ -820,9 +806,12 @@ def installPackage(
         commit=commit,
     )
 
-    if isInMainRepo(packagename, paths) and not isAvalonPackage(paths, packagename):
+    if is_in_metadata_repository(packagename, paths) and not isAvalonPackage(
+        paths, packagename
+    ):
         log.note(
-            "Package is not an Avalon package, but it is in the main repository... installing from there....."
+            "Package is not an Avalon package, but it is \
+            in the main repository... installing from there....."
         )
         moveMainRepoToAvalonFolder(packagename, paths)
 
@@ -852,10 +841,9 @@ def updatePackage(
     if len(args) == 0:
         args.append("r2boyo25/avalonpackagemanager")
 
-    if not os.path.exists(f"{paths['cache']}/R2Boyo25"):
-        downloadMainRepo(paths)
+    download_metadata_repository(paths)
 
-    log.isDebug = flags.debug
+    log.IS_DEBUG = flags.debug
 
     args[0] = args[0].lower()
 
@@ -865,9 +853,10 @@ def updatePackage(
         if os.system(f"cd {paths['src'] / args[0]}; git reset --hard; git pull"):
             error("Git error")
 
-    if isInMainRepo(args[0], paths):
+    if is_in_metadata_repository(args[0], paths):
         log.note(
-            "Package is not an Avalon package, but it is in the main repository... installing from there....."
+            "Package is not an Avalon package, but it is in \
+            the main repository... installing from there....."
         )
         moveMainRepoToAvalonFolder(args[0], paths)
 
@@ -891,12 +880,12 @@ def redoBin(flags: kazparse.flags.Flags, paths: dict[str, Path], *args_: str) ->
     "Redo making of symlinks without recompiling program"
     args: list[str] = list(args_)
 
-    log.isDebug = flags.debug
+    log.IS_DEBUG = flags.debug
 
     args[0] = args[0].lower()
 
     packagename = args[0]
-    pkg: NPackage = getPackageInfo(paths, packagename)
+    pkg: NPackage = get_package_metadata(paths, packagename)
     log.debug(packagename, str(paths["bin"]), str(paths["src"]), str(pkg))
     rmFromBin(paths, packagename, pkg=pkg)
 
@@ -911,22 +900,24 @@ def redoBin(flags: kazparse.flags.Flags, paths: dict[str, Path], *args_: str) ->
 def uninstallPackage(
     flags: kazparse.flags.Flags, paths: dict[str, Path], args: list[str]
 ) -> None:
-    log.isDebug = flags.debug
+    log.IS_DEBUG = flags.debug
 
     args[0] = args[0].lower()
 
-    if not (paths["cache"] / "R2Boyo25").exists():
-        downloadMainRepo(paths)
+    download_metadata_repository(paths)
 
-    if isInMainRepo(args[0], paths) and not isAvalonPackage(paths, args[0]):
+    if is_in_metadata_repository(args[0], paths) and not isAvalonPackage(
+        paths, args[0]
+    ):
         log.note(
-            "Package is not an Avalon package, but it is in the main repository... uninstalling from there....."
+            "Package is not an Avalon package, but it is in \
+            the main repository... uninstalling from there....."
         )
         moveMainRepoToAvalonFolder(args[0], paths)
 
     checkReqs(paths, args[0], flags.force)
 
-    pkg = getPackageInfo(paths, args[0])
+    pkg = get_package_metadata(paths, args[0])
     log.note("Uninstalling.....")
     if not pkg["uninstallScript"]:
         log.warn(
@@ -956,12 +947,14 @@ def uninstallPackage(
 def installed(flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str) -> None:
     "List installed packages"
 
-    log.isDebug = flags.debug
+    log.IS_DEBUG = flags.debug
 
-    print("\n".join(getInstalled(paths)).title())
+    print("\n".join(get_installed_packages_and_versions(paths)).title())
 
 
-def dlSrc(flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str) -> None:
+def download_package_source(
+    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+) -> None:
     "Download repo into folder"
 
     if len(args) == 1:
@@ -971,12 +964,12 @@ def dlSrc(flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str) -> No
         os.system(f"git clone https://github.com/{args[0].lower()} {args[1]}")
 
     else:
-        os.system("git pull")
+        os.system("git pull")  # nosec: B607, B605
 
 
-def updateCache(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+def update_metadata_cache(
+    _flags: kazparse.flags.Flags, paths: dict[str, Path], *_args: str
 ) -> None:
     "Update cache"
 
-    downloadMainRepo(paths)
+    download_metadata_repository(paths, do_not_update=False)

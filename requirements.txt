@@ -1,5 +1,0 @@
-distro
-requests
-keepachangelog
-semver
-gitignore_parser

@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ```
 
 ## `release bump <part>`
-    
+
 get latest version from `CHANGELOG.MD` and bump the version, moving changes from `Unreleased` to the new version.
 
 

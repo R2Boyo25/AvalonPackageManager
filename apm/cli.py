@@ -1,23 +1,27 @@
-import os
-import sys
-import semver  # type: ignore
+"""
+Definition of APM's CommandLine Interface
+"""
+
 from typing import Any
 from pathlib import Path
 
-from .pmUtil import (
+import os
+import sys
+import semver  # type: ignore
+
+from kazparse import Parse
+import kazparse
+from apm import path
+from .pm_util import (
     installPackage,
     uninstallPackage,
-    installLocalPackage,
     redoBin,
     updatePackage,
     installed,
-    dlSrc,
-    updateCache,
-    getInstalledRepos,
+    download_package_source,
+    update_metadata_cache,
+    get_installed_repos,
 )
-from .path import paths
-from kazparse import Parse
-import kazparse
 from .version import version, cyear
 from .changelog import (
     get_package_versions,
@@ -33,7 +37,7 @@ from .case.case import getCaseInsensitivePath
 # Set up some initial information and configurations
 before = f"Avalon Package Manager V{version} Copyright (C) {cyear} R2Boyo25"
 
-# Create an instance of the 'Parse' class from the 'kazparse' module with specific configurations
+# initalize KazParse parser
 p = Parse(
     "apm",
     before=before,
@@ -60,23 +64,29 @@ p.flag(
     "machine",
     short="m",
     long="machine",
-    help="Disable user-facing features. Use in scripts and wrappers or things might break.",
+    help="Disable user-facing features. Use in scripts and wrappers\
+    or things might break.",
 )
 
 # Fetch the versions of all installed packages and store in 'freeze_changelogs'
-freeze_changelogs = get_package_versions(getInstalledRepos(paths))
+freeze_changelogs = get_package_versions(get_installed_repos(path.paths))
 
-# Define a function to display changelogs for installed packages
+
 def display_changes(machine: bool = False) -> None:
+    "Display changelogs for installed packages"
+
     if not machine:
         display_changelogs_packages(freeze_changelogs)
 
-# Define a function to create a changelog file at the specified path (if it doesn't exist)
-def create_changelog(path: str) -> None:
-    path = getCaseInsensitivePath(path)
-    path += "/CHANGELOG.MD"
 
-    dname = os.path.dirname(path)
+def create_changelog(changelog_path: str) -> None:
+    "Create a changelog file at the specified path\
+    (if it doesn't exist)"
+
+    changelog_path = getCaseInsensitivePath(changelog_path)
+    changelog_path += "/CHANGELOG.MD"
+
+    dname = os.path.dirname(changelog_path)
 
     chlog = getCaseInsensitivePath(dname + "/CHANGELOG.MD")
     while not os.path.exists(chlog) and os.path.dirname(dname) != "/":
@@ -85,18 +95,20 @@ def create_changelog(path: str) -> None:
         if os.path.exists(chlog):
             return
 
-    if os.path.exists(path):
+    if os.path.exists(changelog_path):
         return
 
-    with open(path, "w") as f:
-        f.write(
+    with open(changelog_path, "w", encoding="utf-8") as changelog_file:
+        changelog_file.write(
             """
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog]\
+(https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic \
+Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 """.strip()
@@ -104,135 +116,158 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         )
 
 
-
 # Define a command function for the 'release' submenu
 @p.command("release")
-def releaseSubmenu(_: Any, __: Any, *args: str) -> None:
+def release_submenu(_: Any, __: Any, *args: str) -> None:
     "Submenu for interacting with changelogs"
 
-    # Create a new Parse instance for the 'apm release' command with specific configurations
-    rp = Parse("apm release", before=before)
+    # Create a new Parse instance for the 'apm release' command with
+    # specific configurations
+    release_parser = Parse("apm release", before=before)
 
     # Define a command function 'releaseBump' within the 'release' submenu
-    @rp.command("bump")
-    def releaseBump(flags: kazparse.flags.Flags, *args: str) -> None:
-        "Bump `CHANGELOG.MD`'s version: major, minor, or patch\nIf `part` not specified, guess based off of `[Unreleased]`"
+    @release_parser.command("bump")
+    def release_bump_version(_flags: kazparse.flags.Flags, *args: str) -> None:
+        "Bump `CHANGELOG.MD`'s version: major, minor, or patch\nIf \
+        `part` not specified, guess based off of `[Unreleased]`"
 
-        # Ensure that the 'CHANGELOG.MD' file exists in the current working directory
+        # Ensure that the 'CHANGELOG.MD' file exists in the current
+        # working directory
         create_changelog(os.getcwd())
 
-        # Call 'bump_version' function to update the version in the 'CHANGELOG.MD' file
+        # Call 'bump_version' function to update the version in the
+        # 'CHANGELOG.MD' file
         bump_version(*args)
 
     # Define a command function 'releaseChange' within the 'release' submenu
-    @rp.command("change")
-    def releaseChange(flags: kazparse.flags.Flags, *args: str) -> None:
+    @release_parser.command("change")
+    def release_edit_changelog(_flags: kazparse.flags.Flags, _args: str) -> None:
         "Edit `CHANGELOG.MD` w/ `$VISUAL_EDITOR`"
 
-        # Ensure that the 'CHANGELOG.MD' file exists in the current working directory
+        # Ensure that the 'CHANGELOG.MD' file exists in the current
+        # working directory
         create_changelog(os.getcwd())
 
-        # Get the preferred text editor from the environment variables (fallback to 'nano' if not set)
+        # Get the preferred text editor from the environment variables
+        # (fallback to 'nano' if not set)
         visual_editor = os.environ.get(
             "VISUAL_EDITOR", os.environ.get("EDITOR", "nano")
         )
 
         # Open the 'CHANGELOG.MD' file with the specified text editor
-        exit(os.system(f"{visual_editor} {get_changelog_path(Path('.'))}"))
+        sys.exit(os.system(f"{visual_editor} {get_changelog_path(Path('.'))}"))
 
     # Execute the 'apm release' command with the provided arguments
-    rp.run(args=args)
+    release_parser.run(args=args)
+
 
 # Define a command function for the 'changes' command
 @p.command("changes")
-def packageChanges(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+def package_view_changes(
+    _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
-    "View changes in `package` since `version`\nchanges [version]\nchanges [package]\nchanges <package> [version]"
+    """
+    View changes in `package` since `version`
+    changes [version]
+    changes [package]
+    changes <package> [version]
+    """
 
     # If no arguments are provided, show changes since version '0.0.0'
-    if not len(args):
+    if len(args) == 0:
         changes = get_changes_after(Path("."), semver.VersionInfo.parse("0.0.0"))
         display_changelogs([("", changes)])
         return
 
-    # If two arguments are provided, show changes for a specific package and version
+    # If two arguments are provided, show changes for a specific
+    # package and version
     if len(args) == 2:
-        version = semver.VersionInfo.parse(args[1])
-        display_changelogs_packages([(args[0], version)])
+        package_version = semver.VersionInfo.parse(args[1])
+        display_changelogs_packages([(args[0], package_version)])
         return
 
-    # If the first argument is 'all', show changes for all installed packages
+    # If the first argument is 'all', show changes for all installed
+    # packages
     if args[0] == "all":
-        display_all_changelogs(getInstalledRepos(paths))
+        display_all_changelogs(get_installed_repos(paths))
         return
 
-    # If the first argument is a version, show changes since that version
-    if not "/" in args[0]:
-        version = semver.VersionInfo.parse(args[0])
-        changes = get_changes_after(Path("."), version)
+    # If the first argument is not a package - so, a version - show
+    # changes since that version
+    if "/" not in args[0]:
+        package_version = semver.VersionInfo.parse(args[0])
+        changes = get_changes_after(Path("."), package_version)
         display_changelogs([("", changes)])
         return
 
-    # If a package name and version are provided, show changes since that version for the specific package
+    # If a package name and version are provided, show changes since
+    # that version for the specific package
     pkgpath = paths["src"] / str(args[0])
     changes = get_changes_after(pkgpath, semver.VersionInfo.parse("0.0.0"))
     display_changelogs([(args[0], changes)])
 
+
 # Define a command function for the 'gen' command
 @p.command("gen")
-def genPackage(flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str) -> None:
+def generate_package(
+    _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+) -> None:
     "Generate a package using AvalonGen"
     os.system(str(paths["bin"]) + "/avalongen " + " ".join([f'"{i}"' for i in args]))
 
+
 # Define a command function for the 'install' command
 @p.command("install")
-def installFunction(
+def cli_install_package(
     flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
     "Installs a package"
 
-    # Call the 'installPackage' function to install the package specified by the arguments
     installPackage(flags, paths, list(args))
 
     # Display changelogs for installed packages
     display_changes(flags.machine)
 
+
 # Define a command function for the 'uninstall' command
 @p.command("uninstall")
-def uninstallFunction(
+def cli_uninstall_package(
     flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
     "Uninstalls a package"
-    # Call the 'uninstallPackage' function to uninstall the package specified by the arguments
+
     uninstallPackage(flags, paths, list(args))
+
 
 # Define a command function for the 'update' command (hidden)
 @p.command("update", hidden=True)
-def updatePackageCLI(
+def cli_update_package(
     flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
-    "Update to the newest version of a repo, then recompile + reinstall program"
+    "Update to the newest version of a repo, \
+    then recompile + reinstall program"
 
-    # Call the 'updatePackage' function to update and reinstall the package specified by the arguments
     updatePackage(flags, paths, *args)
 
     # Display changelogs for installed packages
     display_changes(flags.machine)
 
+
 # Define a command function for the 'refresh' command
 @p.command("refresh")
-def refreshCacheFolder(
+def cli_refresh_cache_folder(
     flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
-    "Refresh the main repo cache"
+    "Refresh the main repository cache"
 
-    # Call the 'updateCache' function to refresh the main repository cache
-    updateCache(flags, paths, *args)
+    update_metadata_cache(flags, paths, *args)
+
 
 # Define a command function for the 'pack' command
 @p.command("pack")
-def genAPM(flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str) -> None:
+def create_apm(
+    _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+) -> None:
     "Generate .apm file with AvalonGen"
     os.system(
         str(paths["bin"])
@@ -241,23 +276,34 @@ def genAPM(flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str) -> N
         + " ".join([f'"{i}"' for i in args])
     )
 
+
 # Define a command function for the 'unpack' command
 @p.command("unpack")
-def unpackAPM(flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str) -> None:
+def unpack_apm(
+    _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+) -> None:
     "Unpack .apm file with AvalonGen"
     raise NotImplementedError
-    # os.system(binpath + '/avalongen ' + "unpack " + " ".join([f"\"{i}\"" for i in sys.argv[2:]]))
+    # os.system(
+    #     str(paths["bin"])
+    #     + "/avalongen "
+    #     + "unpack "
+    #     + " ".join([f'"{i}"' for i in args])
+    # )
+
 
 # Define a command function for the 'redobin' command (hidden)
 @p.command("redobin", hidden=True)
-def redoBinCopy(
+def cli_redo_bin(
     flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
+    "Regenerate symlinks for a package"
     redoBin(flags, paths, *args)
+
 
 # Define a command function for the 'installed' command
 @p.command("installed")
-def listInstalled(
+def cli_list_nstalled(
     flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
 ) -> None:
     "List installed packages"
@@ -265,21 +311,25 @@ def listInstalled(
     # Call the 'installed' function to list installed packages
     installed(flags, paths, *args)
 
+
 # Define a command function for the 'src' command
 @p.command("src")
-def dlSrcCli(flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str) -> None:
+def cli_download_source(
+    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+) -> None:
     "Download a repo into a folder"
 
-    # Call the 'dlSrc' function to download a repository into a specified folder
-    dlSrc(flags, paths, *args)
+    download_package_source(flags, paths, *args)
 
 
-# Define the main function that serves as the entry point of the script
 def main() -> None:
+    "The main function, it does things. (like calling the parser.\
+    Actually, no. That's all it does.)"
 
-    # Run the 'p.run' method to start the execution of the Avalon Package Manager (APM)
-    # The 'extras' parameter is used to provide additional context or data to the command-line parser
-    # In this case, 'paths' contains a dictionary with various paths used by the APM script
-    # This allows the CLI commands to access and utilize these paths as needed during execution
-    p.run(extras=paths)
-
+    # Run the 'p.run' method to start the execution of the Avalon
+    # Package Manager (APM). The 'extras' parameter is used to provide
+    # additional context or data to the command-line parser. In this
+    # case, 'paths' contains a dictionary with various paths used by
+    # the APM script. This allows the CLI commands to access and
+    # utilize these paths as needed during execution
+    p.run(extras=path.paths)

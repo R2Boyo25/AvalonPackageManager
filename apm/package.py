@@ -1,5 +1,3 @@
-import requests, json
-
 from typing import Any, Iterable
 
 
@@ -10,7 +8,8 @@ class NPackage:
     def __getitem__(self, item: Any) -> None | Any:
         try:
             return self.idict[item]
-        except:
+
+        except KeyError:
             return None
 
     def __setitem__(self, item: Any, value: Any) -> None:

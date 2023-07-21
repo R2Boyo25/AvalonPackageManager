@@ -24,6 +24,6 @@ apm install r2boyo25/powdersim
 # to install a local repo, just use
 apm install /path/to/repo
 # or
-apm install . 
+apm install .
 # if you are in the repo's folder
 ```

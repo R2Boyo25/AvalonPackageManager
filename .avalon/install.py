@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -15,7 +14,11 @@ scriptPath = binPath / binf
 
 if not scriptPath.exists():
     with scriptPath.open("w") as scriptFile:
-        filecontent = f'''#!/usr/bin/env bash\n\nPYTHONPATH="$PYTHONPATH:{filesFolder}/" python3 {filesFolder}/apm/__main__.py "$@"'''
+        filecontent = f"""#!/usr/bin/env bash
+
+PYTHONPATH="$PYTHONPATH:{filesFolder}/\
+" python3 {filesFolder}/apm/__main__.py "$@"
+"""
         scriptFile.write(filecontent)
         # Set file permissions to be executable
         scriptPath.chmod(0o755)

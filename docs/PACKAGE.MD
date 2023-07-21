@@ -27,7 +27,7 @@ In `package` in `.avalon` in the program's repo, or `package` in `user/repo` in 
     }, # (optional)
     "distros": [
         "Debian",
-        "Ubuntu" # list supported distros, will not install on unsupported distros (optional) 
+        "Ubuntu" # list supported distros, will not install on unsupported distros (optional)
     ],
     "arches": [
         "amd64",

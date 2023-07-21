@@ -1,16 +1,17 @@
-import os
 from typing import Any
 
 
 def getCaseInsensitivePath(path: str, RET_FOUND: bool = False) -> Any:
     """
-        Get a case insensitive path on a case sensitive system
+    Get a case insensitive path on a case sensitive system
 
-        RET_FOUND is for internal use only, to avoid too many calls to os.path.exists
-        # Example usage
-        getCaseInsensitivePath('/hOmE/mE/sOmEpAtH.tXt')
+    RET_FOUND is for internal use only, to avoid too many calls to
+    os.path.exists
 
-    from https://code.activestate.com/recipes/576571-case-insensitive-filename-on-nix-systems-return-th/
+    # Example usage
+    getCaseInsensitivePath('/hOmE/mE/sOmEpAtH.tXt')
+
+    from https://code.activestate.com/recipes/576571-case-insensitive-filename-on-nix-systems-return-th/  # noqa
     """
     import os
 
@@ -44,7 +45,7 @@ def getCaseInsensitivePath(path: str, RET_FOUND: bool = False) -> Any:
 
     try:  # we are expecting 'd' to be a directory, but it could be a file
         files = os.listdir(d)
-    except:
+    except Exception:
         if RET_FOUND:
             return path, False
         else:
@@ -54,7 +55,7 @@ def getCaseInsensitivePath(path: str, RET_FOUND: bool = False) -> Any:
 
     try:
         f_nocase = [fl for fl in files if fl.lower() == f_low][0]
-    except:
+    except Exception:
         f_nocase = None
 
     if f_nocase:

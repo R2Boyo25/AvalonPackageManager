@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "apm"
+version = "0.3.3"
+description = "A simple-ish package manager"
+authors = ["Kazani"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+distro = "^1.8.0"
+requests = "^2.31.0"
+keepachangelog = "^1.0.0"
+semver = "^3.0.1"
+gitignore-parser = "^0.1.4"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+mypy = "^1.4.1"
+flake8 = "^6.0.0"
+pre-commit = "^3.3.3"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

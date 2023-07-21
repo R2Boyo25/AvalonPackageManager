@@ -1,12 +1,18 @@
+"""
+Logging utilities for Avalon.
+"""
+
 import os
-import sys
 from typing import Optional
+from enum import Enum
 
-issilent = False
-isDebug = False
+IS_SILENT = False
+IS_DEBUG = False
 
 
-class colors:
+class Colors(Enum):
+    "tput setaf colors"
+
     OK = 6
     WARN = 3
     SUCCESS = 2
@@ -14,52 +20,66 @@ class colors:
     DEBUG = 5
 
 
-def colorprint(*text: str, color: int = colors.OK) -> None:
-    if not issilent:
-        os.system(f"tput setaf {color}")
+def colorprint(*text: str, color: Colors = Colors.OK) -> None:
+    "Print `text` with the color `color` using `tput`"
+
+    if not IS_SILENT:
+        os.system(f"tput setaf {color.value}")  # nosec
 
         print(" ".join(text))
 
-        os.system("tput sgr0")
+        os.system("tput sgr0")  # nosec
 
 
 def success(*text: str) -> str:
-    colorprint(*text, color=colors.SUCCESS)
+    "Print a successful message"
+
+    colorprint(*text, color=Colors.SUCCESS)
 
     return " ".join(text)
 
 
 def error(*text: str) -> str:
-    colorprint(*text, color=colors.FAIL)
+    "Print an error"
+
+    colorprint(*text, color=Colors.FAIL)
 
     return " ".join(text)
 
 
 def note(*text: str) -> str:
-    colorprint(*text, color=colors.OK)
+    "Print a note"
+
+    colorprint(*text, color=Colors.OK)
 
     return " ".join(text)
 
 
 def warn(*text: str) -> str:
-    colorprint(*text, color=colors.WARN)
+    "Print a warning"
+
+    colorprint(*text, color=Colors.WARN)
 
     return " ".join(text)
 
 
 def debug(*text: str) -> str:
-    if isDebug:
-        colorprint(*text, color=colors.DEBUG)
+    "Print a debug message, hidden if IS_DEBUG is False"
+
+    if IS_DEBUG:
+        colorprint(*text, color=Colors.DEBUG)
 
     return " ".join(text)
 
 
 def silent(toset: Optional[bool] = None) -> None:
-    global issilent
+    "Silence the output."
+
+    global IS_SILENT
 
     if toset is None:
 
-        issilent = not issilent
+        IS_SILENT = not IS_SILENT
         return
 
-    issilent = toset
+    IS_SILENT = toset

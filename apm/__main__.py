@@ -1,3 +1,3 @@
-from apm.CLI import main
+from apm.cli import main
 
 main()

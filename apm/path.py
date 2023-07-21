@@ -1,18 +1,22 @@
+"""
+XDG-relative paths for various purposes.
+"""
+
+
 import os
 from pathlib import Path
 
 # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest#variables
 
 xdg_path = Path(os.environ.get("HOME", "~")).expanduser()
-xdg_data_dir = Path(
-    os.environ.get("XDG_DATA_HOME", xdg_path / ".local/share")
-).expanduser()
 xdg_config_dir = Path(
     os.environ.get("XDG_CONFIG_HOME", xdg_path / ".config")
 ).expanduser()
 xdg_cache_dir = Path(os.environ.get("XDG_CACHE_HOME", xdg_path / ".cache")).expanduser()
 temp_dir = Path(
-    os.environ.get("TMPDIR", os.environ.get("TEMP", os.environ.get("TMP", "/tmp")))
+    os.environ.get(
+        "TMPDIR", os.environ.get("TEMP", os.environ.get("TMP", "/tmp"))
+    )  # nosec B108
 ).expanduser()
 
 avalon_root = xdg_config_dir / "avalonpm"

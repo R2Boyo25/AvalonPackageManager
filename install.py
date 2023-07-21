@@ -1,43 +1,72 @@
-# Import necessary modules
-import os, sys
+import os
+import sys
+import pathlib
+import apm.path
 
-# Print a message to indicate the start of the script
-print("Install dependencies.....")
 
-# Install required dependencies from the 'requirements.txt' file using 'pip'
-# The '--user' flag installs the packages for the current user only (non-system-wide)
-# The condition checks if the system is Gentoo (package manager is portage) and if so, installs without '--user'
-os.system(
-    f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} -r requirements.txt"
-)
+# move to the directory that __file__ is in.
+os.chdir(pathlib.Path(__file__).parent)
 
-# Try importing 'kazparse' module; if it fails, install it from GitHub repository
+# Warn the user of their impending 'device is full' error due to bloat
+print("Installing dependencies using Poetry (sorry for the dependency)...")
+
+
+def install_pip_dependency(*args: str) -> int:
+    # Check if we are running on Gentoo (package manager is portage)
+    on_gentoo = os.path.exists("/etc/portage")
+
+    # The '--user' flag installs the package for the current user only
+    # (non-system-wide).  '--user' is necessary to prevent breaking
+    # Portage's python installation
+
+    user_flag = " --user" if on_gentoo else ""
+
+    return os.system(f"python3 -m pip install{user_flag} {' '.join(args)}")  # nosec
+
+
+# Check if poetry is installed, if not, install it.  Poetry is needed
+# for install the dependencies of APM itself
 try:
-    import kazparse  # type: ignore
-except:
+    import poetry
+
+    del poetry
+
+except ImportError:
+    install_pip_dependency("poetry")
+
+
+# Install dependencies with Poetry.
+os.system("poetry install --no-root --without=dev")  # nosec
+
+
+# Try importing 'kazparse' module; if it fails, install it from GitHub
+# repository
+try:
+    import kazparse
+
+    del kazparse
+
+except ImportError:
     # Install 'kazparse' from the GitHub repository using 'pip'
-    # The '--user' flag installs the package for the current user only (non-system-wide)
-    # The condition checks if the system is Gentoo (package manager is portage) and if so, installs without '--user'
-    os.system(
-        f"python3 -m pip install{' --user' if os.path.exists('/etc/portage') else ''} git+https://github.com/R2Boyo25/cliparse.git"
-    )
+    install_pip_dependency("git+https://github.com/R2Boyo25/cliparse.git")
 
-# Print a message to indicate the start of installing APM (Avalon Package Manager) using APM
-print("Installing APM using APM...")
 
-# Run the 'apm' command to install APM with the arguments passed in the script's command line (sys.argv)
-# This assumes that 'apm' is an executable Python script that handles the installation process
-result = os.system(f"python3 -m apm {' '.join(sys.argv[1:])} install .")
+print("Installing APM using the downloaded APM...")
 
-# Check if the installation was successful by inspecting the result value
+# Run the 'apm' module with the arguments passed in the script's
+# command line (sys.argv)
+result = os.system(f"python3 -m apm {' '.join(sys.argv[1:])} install .")  # nosec
+
 if result:
-    # If the installation failed (non-zero result code), print an error message and exit the script with the result code
+    # If the installation failed, print an error message and exit the
+    # script with the result code
     print("Failed to install APM.")
     exit(result)
 
-# Print a message indicating the successful installation of APM
 print(
-    """Done.
-It is now safe to delete the AvalonPackageManager folder you have just downloaded, 
-as it has been downloaded and installed to Avalon's directory."""
+    f"""Done.
+It is now safe to delete the AvalonPackageManager\n\
+folder you have just downloaded,
+as it has been downloaded and installed\n\
+to Avalon's directory - {apm.path.paths['root']}."""
 )
