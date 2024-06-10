@@ -120,11 +120,9 @@ def is_in_metadata_repository(package_name: str, paths: Paths) -> bool:
 
     status = (paths.metadata / package_name / "package").exists()
 
-    if status:
-        log.debug(f"{package_name} was found in the main repository cache.")
-
-    else:
-        log.debug(f"{package_name} was not found in the main repository cache.")
+    log.debug(
+        f"{package_name} was {'not ' if not status else ''}found in the main repository cache."
+    )
 
     return status
 

@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 @dataclass
 class Package:
+    author: str | None = None
+    repo: str | None = None
     version: str | None = None
     binname: str | None = None
     binfile: str | None = None

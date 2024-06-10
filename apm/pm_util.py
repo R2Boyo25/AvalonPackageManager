@@ -491,16 +491,18 @@ def install_package_from_directory(
             fatal_error("Error unpacking package, not a tar.gz file")
 
     with (tmppath / ".avalon/package").open("r", encoding="utf-8") as package_file:
-        cfgfile = json.load(package_file)
+        package = Package(**json.load(package_file))
 
-    try:
-        package_name = args[0] = (cfgfile["author"] + "/" + cfgfile["repo"]).lower()
+    if not package.author:
+        fatal_error("Package's metadata must contain `author`.")
 
-    except KeyError:
-        fatal_error("Package's package file need 'author' and 'repo'")
+    if not package.repo:
+        fatal_error("Package's metadata must contain `repo`.")
+
+    package_name = args[0] = (package.author + "/" + package.repo).lower()
 
     log.note("Deleting old binaries and source files.....")
-    delete_package(paths, package_name, cfgfile)
+    delete_package(paths, package_name, package)
 
     log.note("Copying package files....")
 
