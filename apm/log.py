@@ -7,38 +7,37 @@ import sys
 
 from enum import Enum
 from pathlib import Path
+from typing import NoReturn
 
-IS_SILENT = False # Flag to control whether to print messages or not
-IS_DEBUG = False # Flag to control whether to print debug messages or not
+IS_SILENT = False
+IS_DEBUG = False
 
 
-# Enum class to represent text colors
 class Colors(Enum):
     "tput setaf colors"
 
-    OK = 6       # Success color
-    WARN = 3     # Warning color
-    SUCCESS = 2  # Successful message color
-    FAIL = 1     # Error color
-    DEBUG = 5    # Debug message color
+    OK = 6  # White, by default
+    WARN = 3  # Orange, by default
+    SUCCESS = 2  # Green, by default
+    FAIL = 1  # Red, by default
+    DEBUG = 5  # Purple, by default
 
 
-# Function to print colored text
 def colorprint(*text: str | Path, color: Colors = Colors.OK) -> str:
     "Print `text` with the color `color` using `tput`"
 
-    if not IS_SILENT:  # Only print if not in silent mode
-        os.system(f"tput setaf {color.value}")  # Set the text color using `tput`  # nosec
+    joined_text = " ".join(map(str, text))
 
-        joined_text = " ".join(map(str, text))  # Convert the input arguments to a single string
+    if not IS_SILENT:
+        os.system(
+            f"tput setaf {color.value}"
+        )  # Set the text color using `tput`  # nosec
 
-        print(joined_text)  # Print the colored text
+        print(joined_text)
 
         os.system("tput sgr0")  # Reset the text color using `tput`  # nosec
 
-        return joined_text  # Return the colored text
-
-    return ""  # Return an empty string if in silent mode
+    return joined_text
 
 
 # Helper functions for printing different types of messages with specific colors
@@ -54,7 +53,7 @@ def error(*text: str | Path) -> str:
     return colorprint(*text, color=Colors.FAIL)
 
 
-def fatal_error(*text: str | Path) -> None:
+def fatal_error(*text: str | Path) -> NoReturn:
     "Print an error and exit."
     error(*text)
     sys.exit(1)
@@ -75,7 +74,7 @@ def warn(*text: str | Path) -> str:
 def debug(*text: str | Path) -> str:
     "Print a debug message, hidden if IS_DEBUG is False"
 
-    if IS_DEBUG: # Only print debug messages if in debug mode
+    if IS_DEBUG:
         return colorprint(*text, color=Colors.DEBUG)
 
-    return " ".join(map(str, text)) # If not in debug mode, return the input arguments as a single string
+    return " ".join(map(str, text))

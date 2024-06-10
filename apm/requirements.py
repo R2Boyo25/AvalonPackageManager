@@ -3,12 +3,12 @@ Functions for checking that Linux distributions and CPU architectures are suppor
 """
 
 import platform
-from typing import Any
-from pathlib import Path
 
 import distro
 
 from apm import log
+from apm.package import Package
+from apm.path import Paths
 from .metadata import get_package_metadata
 
 
@@ -18,13 +18,13 @@ def get_linux_distribution() -> str:
     return distro.linux_distribution()[0]
 
 
-def linux_distribution_is_supported(pkg: Any) -> bool:
+def linux_distribution_is_supported(package: Package) -> bool:
     """Check if Linux distribution is supported by the package."""
     log.debug(get_linux_distribution())
 
-    if pkg["distros"]:
-        return (get_linux_distribution() in pkg["distros"]) or (
-            pkg["distros"] == ["all"]
+    if package.distros:
+        return (get_linux_distribution() in package.distros) or (
+            package.distros == ["all"]
         )
 
     log.warn(
@@ -40,16 +40,14 @@ def get_architecture() -> str:
     return platform.machine()
 
 
-def architecture_is_supported(pkg: Any) -> bool:
+def architecture_is_supported(package: Package) -> bool:
     """Checks if the CPU architecture is supported by the package."""
 
-    log.debug("Package metadata:", str(pkg))
+    log.debug("Package metadata:", str(package))
     log.debug("Architecture:", get_architecture())
 
-    if pkg["arches"]:
-        return (get_architecture() in pkg["arches"]) or (
-            pkg["arches"] == ["all"]
-        )
+    if package.arches:
+        return (get_architecture() in package.arches) or (package.arches == ["all"])
 
     log.warn(
         "Supported architectures have not been specified, \
@@ -59,19 +57,19 @@ def architecture_is_supported(pkg: Any) -> bool:
 
 
 def check_for_satisfied_package_requirements(
-    paths: dict[str, Path], pkgname: str, force: bool
+    paths: Paths, package_name: str, force: bool
 ) -> tuple[bool, str | None, str | None]:
     """Checks that the package's requirements are satisfied"""
-    pkg = get_package_metadata(paths, pkgname)
+    package = get_package_metadata(paths, package_name)
 
     if force:
-        if not architecture_is_supported(pkg):
+        if not architecture_is_supported(package):
             log.warn(
                 f"Arch {get_architecture()} not supported by \
                 package, continuing anyway due to forced mode"
             )
 
-        if not linux_distribution_is_supported(pkg):
+        if not linux_distribution_is_supported(package):
             log.warn(
                 f"Distro {get_linux_distribution()} not supported by package, \
                 continuing anyway due to forced mode"
@@ -79,10 +77,10 @@ def check_for_satisfied_package_requirements(
 
         return True, None, None
 
-    if not architecture_is_supported(pkg):
+    if not architecture_is_supported(package):
         return False, "CPU Architecture", get_architecture()
 
-    if not linux_distribution_is_supported(pkg):
+    if not linux_distribution_is_supported(package):
         return False, "Linux distribution", get_linux_distribution()
 
     return True, None, None

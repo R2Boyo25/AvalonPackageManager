@@ -29,9 +29,7 @@ def install_pip_dependency(*args: str) -> int:
 
     user_flag = " --user" if on_gentoo else ""
 
-    return os.system(
-        f"python3 -m pip install{user_flag} {' '.join(args)}"
-    )  # nosec
+    return os.system(f"python3 -m pip install{user_flag} {' '.join(args)}")  # nosec
 
 
 # Install dependencies.
@@ -51,9 +49,7 @@ print("Installing APM using the downloaded APM...")
 
 # Run the 'apm' module with the arguments passed in the script's
 # command line (sys.argv)
-result = os.system(
-    f"python3 -m apm {' '.join(sys.argv[1:])} install ."
-)  # nosec
+result = os.system(f"python3 -m apm {' '.join(sys.argv[1:])} install .")  # nosec
 
 if result:
     # If the installation failed, print an error message and exit the
@@ -66,5 +62,5 @@ print(
 It is now safe to delete the AvalonPackageManager\n\
 folder you have just downloaded,
 as it has been downloaded and installed\n\
-to Avalon's directory - {apm.path.paths['root']}."""
+to Avalon's directory - {apm.path.paths.root}."""
 )

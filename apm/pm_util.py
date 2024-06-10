@@ -4,7 +4,6 @@ Main utilities for the package manager.
 TODO: separate into smaller files
 """
 
-
 import os
 import shutil
 import json
@@ -12,14 +11,15 @@ import getpass
 import filecmp
 import subprocess  # nosec B404
 
-from typing import Any
 from pathlib import Path
 
 import kazparse
+import kazparse.flags
 
 from apm import log
 from apm.log import fatal_error
-from .package import NPackage
+from .path import Paths
+from .package import Package
 from .metadata import (
     is_in_metadata_repository,
     get_package_metadata,
@@ -31,8 +31,7 @@ from .requirements import check_for_satisfied_package_requirements
 
 
 def copy_file(src: Path, dst: Path) -> None:
-    "Copy a file only if files are not the same or the destination\
-    does not exist"
+    """Copy a file only if files are not the same or the destination does not exist"""
     if not os.path.dirname(dst).strip() == "":
         os.makedirs(os.path.dirname(dst), exist_ok=True)
 
@@ -46,152 +45,138 @@ def copy_file(src: Path, dst: Path) -> None:
 
 
 def download_package(
-    paths: dict[str, Path],
+    paths: Paths,
     package_url: str,
-    packagename: str | None = None,
+    package_name: str | None = None,
     branch: str | None = None,
     commit: str | None = None,
 ) -> None:
     """Downloads a specfic commit and branch of a package."""
 
-    if not packagename:
-        packagename = package_url.lstrip("https://github.com/")
+    if not package_name:
+        package_name = package_url.lstrip("https://github.com/")
 
-    log.debug(packagename)
-    os.chdir(paths["src"])
+    log.debug(package_name)
+    os.chdir(paths.source)
 
     if commit and branch:
-        os.system("git clone " + package_url + " " + packagename + " -q")
-        os.system(f"cd {packagename}; git reset --hard {commit}")
+        os.system("git clone " + package_url + " " + package_name + " -q")
+        os.system(f"cd {package_name}; git reset --hard {commit}")
 
     elif branch:
-        packagename = "/".join(packagename.split(":")[:-1])
+        package_name = "/".join(package_name.split(":")[:-1])
         os.system(
             "git clone --depth 1 "
             + package_url
             + " "
-            + packagename
+            + package_name
             + " -q -b "
             + branch
         )
 
     elif commit:
-        os.system("git clone " + package_url + " " + packagename + " -q")
-        os.system(f"cd {packagename}; git reset --hard {commit}")
+        os.system("git clone " + package_url + " " + package_name + " -q")
+        os.system(f"cd {package_name}; git reset --hard {commit}")
 
     else:
-        os.system(
-            "git clone --depth 1 " + package_url + " " + packagename + " -q"
-        )
+        os.system("git clone --depth 1 " + package_url + " " + package_name + " -q")
 
 
 def delete_package(
-    paths: dict[str, Path],
-    packagename: str,
-    cfg: Any | None = None,
+    paths: Paths,
+    package_name: str,
+    package: Package | None = None,
     commit: str | None = None,
     branch: str | None = None,
 ) -> None:
     """Deletes the package."""
 
-    remove_package_source(paths, packagename)
+    remove_package_source(paths, package_name)
 
-    if cfg:
+    if package:
         remove_package_binary_symlink(
-            paths, packagename, cfg, branch=branch, commit=commit
+            paths, package_name, package, branch=branch, commit=commit
         )
 
     else:
-        remove_package_binary_symlink(
-            paths, packagename, branch=branch, commit=commit
-        )
+        remove_package_binary_symlink(paths, package_name, branch=branch, commit=commit)
 
-    remove_package_files(paths, packagename)
+    remove_package_files(paths, package_name)
 
 
-def remove_package_source(paths: dict[str, Path], packagename: str) -> None:
+def remove_package_source(paths: Paths, package_name: str) -> None:
     """Deletes the source code of a package."""
 
-    if (paths["src"] / packagename).exists():
-        shutil.rmtree(paths["src"] / packagename, ignore_errors=True)
+    if (paths.source / package_name).exists():
+        shutil.rmtree(paths.source / package_name, ignore_errors=True)
 
 
 def remove_package_binary_symlink(
-    paths: dict[str, Path],
-    packagename: str,
-    pkg: Any | None = None,
+    paths: Paths,
+    package_name: str,
+    package: Package | None = None,
     commit: str | None = None,
     branch: str | None = None,
 ) -> None:
     """Deletes the symlink for a package."""
 
-    log.debug("Removing symlink for:", packagename)
+    log.debug("Removing symlink for:", package_name)
 
-    if not pkg:
-        pkg = get_package_metadata(paths, packagename, commit, branch)
+    if package is None:
+        package = get_package_metadata(paths, package_name, commit, branch)
 
-    if "binname" in pkg.keys():
-        log.debug(str(paths["bin"] / str(pkg["binname"])))
+    if package.binname:
+        package_bin_dir = paths.binaries / package.binname
 
-        if (paths["bin"] / str(pkg["binname"])).exists():
-            log.debug("Deleting", str(paths["bin"] / str(pkg["binname"])))
-            os.remove(paths["bin"] / str(pkg["binname"]))
+        if package_bin_dir.exists():
+            log.debug("Deleting", package_bin_dir)
+            os.remove(package_bin_dir)
 
 
-def remove_package_files(paths: dict[str, Path], packagename: str) -> None:
+def remove_package_files(paths: Paths, package_name: str) -> None:
     """Remove's a package's installed files."""
 
-    if (paths["files"] / packagename).exists():
-        shutil.rmtree(paths["files"] / packagename, ignore_errors=True)
+    if (package_files_dir := paths.files / package_name).exists():
+        shutil.rmtree(package_files_dir, ignore_errors=True)
 
 
 def symlink_binary_for_package(
-    paths: dict[str, Path], package_name: str, bin_file: str, bin_name: Path
+    paths: Paths, package_name: str, bin_file: str, bin_name: Path
 ) -> None:
     """Symlinks a binary for the package."""
 
     try:
         shutil.copyfile(
-            paths["src"] / package_name / bin_file,
-            paths["files"] / package_name / bin_name,
+            paths.source / package_name / bin_file,
+            paths.files / package_name / bin_name,
         )
 
     except shutil.Error:
-        log.warn(f"Failed to copy binary to {paths['files']}")
+        log.warn(f"Failed to copy binary to {paths.files}")
 
-    if (paths["bin"] / bin_name).exists():
-        os.remove(paths["bin"] / bin_name)
+    if (paths.binaries / bin_name).exists():
+        os.remove(paths.binaries / bin_name)
 
-    os.symlink(
-        paths["files"] / package_name / bin_file, paths["bin"] / bin_name
-    )
+    os.symlink(paths.files / package_name / bin_file, paths.binaries / bin_name)
 
-    (paths["files"] / package_name / bin_name).chmod(0o755)
+    (paths.files / package_name / bin_name).chmod(0o755)
 
 
 def copy_package_files_to_files_dir(
-    paths: dict[str, Path], pkgname: str, files: list[str] | None = None
+    paths: Paths, package_name: str, files: list[str] | None = None
 ) -> None:
     """Copies a package's files from its source directory to its files directory."""
 
-    if files is None:
-        files = ["all"]
+    if files in (["all"], None):
+        files = os.listdir(paths.source / package_name)
 
-    log.debug("Copying files", str(files), "from src to files for", pkgname)
+    log.debug("Copying files", str(files), "from src to files for", package_name)
 
-    if files != ["all"]:
-        for file in files:
-            copy_file(
-                paths["src"] / pkgname / file,
-                paths["files"] / pkgname / file,
-            )
-
-    else:
-        for file in os.listdir(paths["src"] / pkgname):
-            copy_file(
-                paths["src"] / pkgname / file,
-                paths["files"] / pkgname / file,
-            )
+    for file in files:
+        copy_file(
+            paths.source / package_name / file,
+            paths.files / package_name / file,
+        )
 
 
 def get_installed_apt_packages() -> list[str]:
@@ -199,9 +184,7 @@ def get_installed_apt_packages() -> list[str]:
 
     aptinstalled = []
 
-    dpkg_output = subprocess.check_output(
-        "dpkg -l".split()
-    ).decode()  # nosec B603
+    dpkg_output = subprocess.check_output("dpkg -l".split()).decode()  # nosec B603
 
     for i in dpkg_output.split("\n"):
         if i.strip() != "" and i.startswith("ii"):
@@ -275,7 +258,7 @@ def install_apt_build_dep_dependencies(deps: dict[str, list[str]]) -> None:
 
 def install_avalon_dependencies(
     flags: kazparse.flags.Flags,
-    paths: dict[str, Path],
+    paths: Paths,
     args: list[str],
     deps: dict[str, list[str]],
 ) -> None:
@@ -292,7 +275,7 @@ def install_avalon_dependencies(
     log.note("Found avalon dependencies, installing.....")
 
     for dep in deps["avalon"]:
-        if not (paths["files"] / dep.lower()).exists() or flags.update:
+        if not (paths.files / dep.lower()).exists() or flags.update:
             log.note("Installing", dep)
             log.IS_SILENT = True
             args[0] = dep
@@ -319,19 +302,19 @@ def install_pip_dependencies(deps: dict[str, list[str]]) -> None:
     os.system(log.debug(f"python3 -m pip install{user_flag} {joined_deps}"))
 
 
-def install_requirements_dot_txt(pkgname: str, paths: dict[str, Path]) -> None:
+def install_requirements_dot_txt(package_name: str, paths: Paths) -> None:
     """Installs a package's pip depdencies as specified in `requirements.txt`."""
 
-    log.debug(str(paths["src"] / pkgname / "requirements.txt"))
+    log.debug(paths.source / package_name / "requirements.txt")
     log.debug(os.curdir)
 
-    if (paths["src"] / pkgname / "requirements.txt").exists():
+    if (paths.source / package_name / "requirements.txt").exists():
         log.note("Requirements.txt found, installing.....")
 
         on_gentoo = os.path.exists("/etc/portage")
         user_flag = " --user" if on_gentoo else ""
 
-        req_txt = paths["src"] / pkgname / "requirements.txt"
+        req_txt = paths.source / package_name / "requirements.txt"
 
         os.system(
             log.debug(
@@ -341,30 +324,30 @@ def install_requirements_dot_txt(pkgname: str, paths: dict[str, Path]) -> None:
 
 
 def install_package_dependencies(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], args: list[str]
+    flags: kazparse.flags.Flags, paths: Paths, args: list[str]
 ) -> None:
     """Installs a package's dependencies."""
 
-    pkg = get_package_metadata(paths, args[0])
+    package = get_package_metadata(paths, args[0])
 
-    if pkg["deps"]:
+    if package.deps:
         log.note("Found dependencies, installing.....")
-        pkgdeps = pkg["deps"]
+        dependencies = package.deps
 
         if os.path.exists("/usr/bin/apt") and not os.path.exists(
             "/usr/libexec/eselect-java/run-java-tool.bash"
         ):
-            install_apt_dependencies(pkgdeps)
-            install_apt_build_dep_dependencies(pkgdeps)
+            install_apt_dependencies(dependencies)
+            install_apt_build_dep_dependencies(dependencies)
 
-        install_avalon_dependencies(flags, paths, args, pkgdeps)
-        install_pip_dependencies(pkgdeps)
+        install_avalon_dependencies(flags, paths, args, dependencies)
+        install_pip_dependencies(dependencies)
 
     install_requirements_dot_txt(args[0], paths)
     # TODO: install_poetry_dependencies
 
 
-def run_script(script_file: Path, *args: str) -> int:
+def run_script(script_file: Path, *args: str | Path) -> int:
     """Runs a script with its specific interpreter based on the extension."""
 
     langs = {".py": "python3", ".sh": "bash"}
@@ -375,49 +358,49 @@ def run_script(script_file: Path, *args: str) -> int:
 
             with open(script_file, "w", encoding="utf-8") as script_write:
                 script_write.write(
-                    contents.replace(
-                        "pip3 install", "pip3 install --user"
-                    ).replace("pip install", "pip install --user")
+                    contents.replace("pip3 install", "pip3 install --user").replace(
+                        "pip install", "pip install --user"
+                    )
                 )
 
-    argss = " ".join([f"{arg}" for arg in args])
+    joined_args = " ".join([str(arg) for arg in args])
 
     if script_file.suffix.lower() in langs:
         return os.system(
             log.debug(
-                f"{langs[script_file.suffix.lower()]} {script_file} {argss}"
+                f"{langs[script_file.suffix.lower()]} {script_file} {joined_args}"
             )
         )
 
-    return os.system(log.debug(f'{langs[".sh"]} {script_file} {argss}'))
+    return os.system(log.debug(f'{langs[".sh"]} {script_file} {joined_args}'))
 
 
 def compile_package(
-    packagename: str,
-    paths: dict[str, Path],
+    package_name: str,
+    paths: Paths,
     _flags: kazparse.flags.Flags,
 ) -> None:
     """Compiles a package."""
 
-    pkg = get_package_metadata(paths, packagename)
-    os.chdir(paths["src"] / packagename)
+    package = get_package_metadata(paths, package_name)
+    os.chdir(paths.source / package_name)
 
-    (paths["files"] / packagename).mkdir(parents=True, exist_ok=True)
+    (paths.files / package_name).mkdir(parents=True, exist_ok=True)
 
-    if pkg["needsCompiled"]:
-        if not pkg["binname"]:
+    if package.needsCompiled:
+        if not package.binname:
             log.warn(
                 "Package needs compiled but there is no binname for Avalon to install, \
                 assuming installed by compile script....."
             )
 
-        if pkg["compileScript"]:
+        if package.compileScript:
             log.note("Compile script found, compiling.....")
 
             if run_script(
-                paths["src"] / packagename / pkg["compileScript"],
-                f"\"{paths['src'] / packagename}\" \"{pkg['binname']}\" \
-                \"{paths['files'] / packagename}\"",
+                paths.source / package_name / package.compileScript,
+                f'"{paths.source / package_name}" "{package.binname}" \
+                "{paths.files / package_name}"',
             ):
                 fatal_error("Compile script failed!")
 
@@ -427,51 +410,49 @@ def compile_package(
             )
 
     else:
-        log.warn(
-            "Program does not need to be compiled, moving to installation....."
-        )
+        log.warn("Program does not need to be compiled, moving to installation.....")
 
-    if pkg["binname"] and not pkg["mvBinAfterInstallScript"]:
-        remove_package_binary_symlink(paths, packagename)
+    if package.binname and not package.mvBinAfterInstallScript:
+        remove_package_binary_symlink(paths, package_name)
 
         symlink_binary_for_package(
             paths,
-            packagename,
-            str(pkg.get("binfile", pkg["binname"])),
-            Path(pkg["binname"]),
+            package_name,
+            package.binfile or package.binname,
+            Path(package.binname),
         )
 
-    if pkg["installScript"]:
+    if package.installScript:
         log.note("Installing.....")
 
-        if pkg["needsCompiled"] or pkg["compileScript"] or pkg["binname"]:
+        if (package.needsCompiled or package.compileScript) and package.binname:
             if run_script(
-                paths["src"] / packagename / pkg["installScript"],
-                f"\"{paths['files'] / packagename / str(pkg['binname'])}\" \
-                \"{paths['files'] / packagename}\" \
-                \"{paths['bin']}\" \"{paths['src']}\"",
+                paths.source / package_name / package.installScript,
+                f'"{paths.files / package_name / package.binname}" \
+                "{paths.files / package_name}" \
+                "{paths.binaries}" "{paths.source}"',
             ):
                 fatal_error("Install script failed!")
 
         else:
             if run_script(
-                paths["src"] / packagename / pkg["installScript"],
-                f"\"{paths['files'] / packagename}\" \"{paths['src']}\" \"{packagename}\"",
+                paths.source / package_name / package.installScript,
+                f'"{paths.files / package_name}" "{paths.source}" "{package_name}"',
             ):
                 fatal_error("Install script failed!")
 
-    if pkg["toCopy"]:
+    if package.toCopy:
         log.note("Copying files needed by program.....")
-        copy_package_files_to_files_dir(paths, packagename, pkg["toCopy"])
+        copy_package_files_to_files_dir(paths, package_name, package.toCopy)
 
-    if pkg["mvBinAfterInstallScript"] and pkg["binname"]:
-        remove_package_binary_symlink(paths, packagename)
+    if package.mvBinAfterInstallScript and package.binname:
+        remove_package_binary_symlink(paths, package_name)
 
         symlink_binary_for_package(
             paths,
-            packagename,
-            str(pkg.get("binfile", pkg["binname"])),
-            Path(pkg["binname"]),
+            package_name,
+            package.binfile or package.binname,
+            Path(package.binname),
         )
 
     else:
@@ -482,11 +463,12 @@ def compile_package(
 
 
 def install_package_from_directory(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], args: list[str]
+    flags: kazparse.flags.Flags, paths: Paths, args: list[str]
 ) -> None:
     """Installs a package from a local directory."""
 
-    tmppath = paths["tmp"]
+    tmppath = paths.temp
+    package_dir = args[0]
 
     shutil.rmtree(tmppath)
 
@@ -497,37 +479,35 @@ def install_package_from_directory(
 
     log.note("Unpacking package.....")
 
-    if not os.path.exists(args[0]):
-        fatal_error(f"{args[0]} does not exist")
+    if not os.path.exists(package_dir):
+        fatal_error(f"{package_dir} does not exist")
 
-    elif os.path.isdir(args[0]):
-        if os.system(log.debug(f"cp -r {args[0]}/./ {tmppath}")):
+    elif os.path.isdir(package_dir):
+        if os.system(log.debug(f"cp -r {package_dir}/./ {tmppath}")):
             fatal_error("Failed to copy files")
 
     else:
-        if os.system(log.debug(f"tar -xf {args[0]} -C {tmppath}")):
+        if os.system(log.debug(f"tar -xf {package_dir} -C {tmppath}")):
             fatal_error("Error unpacking package, not a tar.gz file")
 
-    with (tmppath / ".avalon/package").open(
-        "r", encoding="utf-8"
-    ) as package_file:
+    with (tmppath / ".avalon/package").open("r", encoding="utf-8") as package_file:
         cfgfile = json.load(package_file)
 
     try:
-        args[0] = (cfgfile["author"] + "/" + cfgfile["repo"]).lower()
+        package_name = args[0] = (cfgfile["author"] + "/" + cfgfile["repo"]).lower()
 
     except KeyError:
         fatal_error("Package's package file need 'author' and 'repo'")
 
     log.note("Deleting old binaries and source files.....")
-    delete_package(paths, args[0], cfgfile)
+    delete_package(paths, package_name, cfgfile)
 
     log.note("Copying package files....")
 
-    if os.system(log.debug(f"mkdir -p {paths['src'] / args[0]}")):
+    if os.system(log.debug(f"mkdir -p {paths.source / package_name}")):
         fatal_error("Failed to make src folder")
 
-    if os.system(log.debug(f"cp -a {tmppath}/. {paths['src'] / args[0]}")):
+    if os.system(log.debug(f"cp -a {tmppath}/. {paths.source / package_name}")):
         fatal_error("Failed to copy files from temp folder to src folder")
 
     shutil.rmtree(tmppath)
@@ -536,91 +516,81 @@ def install_package_from_directory(
         satisfied,
         constraint,
         unsupported,
-    ) = check_for_satisfied_package_requirements(paths, args[0], flags.force)
+    ) = check_for_satisfied_package_requirements(paths, package_name, flags.force)
 
     if not satisfied:
-        fatal_error(
-            f'{constraint} "{unsupported}" is not supported by {args[0]}.'
-        )
+        fatal_error(f'{constraint} "{unsupported}" is not supported by {package_name}.')
 
     install_package_dependencies(flags, paths, args)
 
     if not flags.noinstall:
         log.note("Beginning compilation/installation.....")
-        compile_package(args[0], paths, flags)
+        compile_package(package_name, paths, flags)
         log.success("Done!")
 
     else:
         log.warn("-ni specified, skipping installation/compilation")
 
 
-def install_package(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], args: list[str]
-) -> None:
+def install_package(flags: kazparse.flags.Flags, paths: Paths, args: list[str]) -> None:
     """Installs a package."""
 
     if os.path.exists(args[0]):
         install_package_from_directory(flags, paths, args)
         return
 
-    if os.path.exists(f"{paths['src'] / args[0].lower()}") and not flags.fresh:
+    package_name = args[0].lower()
+
+    if os.path.exists(f"{paths.source / package_name}") and not flags.fresh:
         update_package(flags, paths, *args)
         return
 
     log.IS_DEBUG = flags.debug
 
-    args[0] = args[0].lower()
-
     download_metadata_repository(paths)
 
-    packagename = args[0]
-
-    if ":" in packagename:  # commit
+    if ":" in package_name:  # commit
         branch = None
-        commit = packagename.split(":")[-1]
-        packagename = packagename.split(":")[0]
+        commit = package_name.split(":")[-1]
+        package_name = package_name.split(":")[0]
 
-    elif packagename.count("/") > 1:  # branch
-        branch = packagename.split("/")[-1]
-        packagename = "/".join(packagename.split(":")[:-1])
+    elif package_name.count("/") > 1:  # branch
+        branch = package_name.split("/")[-1]
+        package_name = "/".join(package_name.split(":")[:-1])
         commit = None
 
-    elif (":" in packagename) and (
-        packagename.count("/") > 1
-    ):  # branch and commit
-        commit = packagename.split(":")[-1]
-        packagename = packagename.split(":")[0]
-        branch = packagename.split("/")[-1]
-        packagename = "/".join(packagename.split(":")[:-1])
+    elif (":" in package_name) and (package_name.count("/") > 1):  # branch and commit
+        commit = package_name.split(":")[-1]
+        package_name = package_name.split(":")[0]
+        branch = package_name.split("/")[-1]
+        package_name = "/".join(package_name.split(":")[:-1])
 
     else:  # no branch or commit specified
         branch = None
         commit = None
 
-    args[0] = packagename
+    args[0] = package_name
 
     log.note("Deleting old binaries and source files.....")
-    delete_package(paths, args[0], branch=branch, commit=commit)
+    delete_package(paths, package_name, branch=branch, commit=commit)
     log.note("Downloading from github.....")
-    log.debug(
-        "Downloading https://github.com/" + args[0], "to", str(paths["src"])
-    )
+    log.debug("Downloading https://github.com/" + package_name, "to", paths.source)
     download_package(
         paths,
-        "https://github.com/" + packagename,
-        packagename,
+        "https://github.com/" + package_name,
+        package_name,
         branch=branch,
         commit=commit,
     )
 
-    if is_in_metadata_repository(packagename, paths) and not is_avalon_package(
-        paths, packagename
+    if is_in_metadata_repository(package_name, paths) and not is_avalon_package(
+        paths, package_name
     ):
         log.note(
             "Package is not an Avalon package, but it is \
             in the main repository... installing from there....."
         )
-        move_metadata_to_dot_avalon_folder(packagename, paths)
+        move_metadata_to_dot_avalon_folder(package_name, paths)
 
     else:
         log.debug("Not in the main repo")
@@ -629,29 +599,23 @@ def install_package(
         satisfied,
         constraint,
         unsupported,
-    ) = check_for_satisfied_package_requirements(
-        paths, packagename, flags.force
-    )
+    ) = check_for_satisfied_package_requirements(paths, package_name, flags.force)
 
     if not satisfied:
-        fatal_error(
-            f'{constraint} "{unsupported}" is not supported by {packagename}.'
-        )
+        fatal_error(f'{constraint} "{unsupported}" is not supported by {package_name}.')
 
     install_package_dependencies(flags, paths, args)
 
     if not flags.noinstall:
         log.note("Beginning compilation/installation.....")
-        compile_package(packagename, paths, flags)
+        compile_package(package_name, paths, flags)
         log.success("Done!")
 
     else:
         log.warn("--noinstall specified, skipping installation/compilation")
 
 
-def update_package(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args_: str
-) -> None:
+def update_package(flags: kazparse.flags.Flags, paths: Paths, *args_: str) -> None:
     "Update to newest version of a repo, then recompile + reinstall program"
 
     args: list[str] = list(args_)
@@ -663,22 +627,20 @@ def update_package(
 
     log.IS_DEBUG = flags.debug
 
-    args[0] = args[0].lower()
+    package_name = args[0] = args[0].lower()
 
     log.note("Pulling from github.....")
 
-    if os.system(f"cd {paths['src'] / args[0]}; git pull"):
-        if os.system(
-            f"cd {paths['src'] / args[0]}; git reset --hard; git pull"
-        ):
+    if os.system(f"cd {paths.source / package_name}; git pull"):
+        if os.system(f"cd {paths.source / package_name}; git reset --hard; git pull"):
             fatal_error("Git error")
 
-    if is_in_metadata_repository(args[0], paths):
+    if is_in_metadata_repository(package_name, paths):
         log.note(
             "Package is not an Avalon package, but it is in \
             the main repository... installing from there....."
         )
-        move_metadata_to_dot_avalon_folder(args[0], paths)
+        move_metadata_to_dot_avalon_folder(package_name, paths)
 
     else:
         log.debug("Not in the main repo")
@@ -687,18 +649,16 @@ def update_package(
         satisfied,
         constraint,
         unsupported,
-    ) = check_for_satisfied_package_requirements(paths, args[0], flags.force)
+    ) = check_for_satisfied_package_requirements(paths, package_name, flags.force)
 
     if not satisfied:
-        fatal_error(
-            f'{constraint} "{unsupported}" is not supported by {args[0]}.'
-        )
+        fatal_error(f'{constraint} "{unsupported}" is not supported by {package_name}.')
 
     install_package_dependencies(flags, paths, args)
 
     if not flags.noinstall:
         log.note("Beginning compilation/installation.....")
-        compile_package(args[0], paths, flags)
+        compile_package(package_name, paths, flags)
         log.success("Done!")
 
     else:
@@ -706,96 +666,107 @@ def update_package(
 
 
 def redo_symlinks_for_package(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args_: str
+    flags: kazparse.flags.Flags, paths: Paths, *args_: str
 ) -> None:
     "Redo making of symlinks without recompiling program"
     args: list[str] = list(args_)
 
     log.IS_DEBUG = flags.debug
 
-    args[0] = args[0].lower()
+    package_name = args[0].lower()
+    package = get_package_metadata(paths, package_name)
 
-    packagename = args[0]
-    pkg: NPackage = get_package_metadata(paths, packagename)
-    log.debug(packagename, str(paths["bin"]), str(paths["src"]), str(pkg))
-    remove_package_binary_symlink(paths, packagename, pkg=pkg)
+    if not package.binname:
+        log.fatal_error(
+            "Cannot remake symlinks due to the lack of a `binname` field in the package metadata."
+        )
+
+    log.debug(package_name, paths.binaries, paths.source, str(package))
+    remove_package_binary_symlink(paths, package_name, package=package)
 
     symlink_binary_for_package(
         paths,
-        packagename,
-        str(pkg.get("binfile", pkg["binname"])),
-        Path(str(pkg["binname"])),
+        package_name,
+        package.binfile or package.binname,
+        Path(package.binname),
     )
 
 
 def uninstall_package(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], args: list[str]
+    flags: kazparse.flags.Flags, paths: Paths, args: list[str]
 ) -> None:
     """Uninstalls a package."""
 
     log.IS_DEBUG = flags.debug
 
-    args[0] = args[0].lower()
+    package_name = args[0] = args[0].lower()
 
     download_metadata_repository(paths)
 
-    if is_in_metadata_repository(args[0], paths) and not is_avalon_package(
-        paths, args[0]
+    if is_in_metadata_repository(package_name, paths) and not is_avalon_package(
+        paths, package_name
     ):
         log.note(
             "Package is not an Avalon package, but it is in \
             the main repository... uninstalling from there....."
         )
-        move_metadata_to_dot_avalon_folder(args[0], paths)
+        move_metadata_to_dot_avalon_folder(package_name, paths)
 
     (
         satisfied,
         constraint,
         unsupported,
-    ) = check_for_satisfied_package_requirements(paths, args[0], flags.force)
+    ) = check_for_satisfied_package_requirements(paths, package_name, flags.force)
 
     if not satisfied:
-        fatal_error(
-            f'{constraint} "{unsupported}" is not supported by {args[0]}.'
-        )
+        fatal_error(f'{constraint} "{unsupported}" is not supported by {package_name}.')
 
-    pkg = get_package_metadata(paths, args[0])
+    package = get_package_metadata(paths, package_name)
     log.note("Uninstalling.....")
-    if not pkg["uninstallScript"]:
+
+    if not package.uninstallScript:
         log.warn(
             "Uninstall script not found... Assuming uninstall not required and deleting files....."
         )
-        delete_package(paths, args[0])
+        delete_package(paths, package_name)
 
     else:
         log.note("Uninstall script found, running.....")
-        os.chdir(paths["bin"])
+        os.chdir(paths.binaries)
+
+        if not package.binname:
+            log.fatal_error(
+                "Cannot uninstall package that lacks `binname` field in metadata."
+            )
 
         if run_script(
-            paths["src"] / args[0] / pkg["uninstallScript"],
-            str(paths["src"]),
-            str(paths["bin"]),
-            args[0],
-            str(pkg["binname"]),
-            str(paths["files"] / args[0]),
+            paths.source / package_name / package.uninstallScript,
+            paths.source,
+            paths.binaries,
+            package_name,
+            package.binname,
+            paths.files / package_name,
         ):
             log.error("Uninstall script failed! Deleting files anyways.....")
 
-        delete_package(paths, args[0])
+        delete_package(paths, package_name)
 
     log.success("Successfully uninstalled package!")
 
 
 def download_package_source(
-    _flags: kazparse.flags.Flags, _paths: dict[str, Path], *args: str
+    _flags: kazparse.flags.Flags, _paths: Paths, *args: str
 ) -> None:
     "Download repo into folder"
 
+    package_name = args[0].lower()
+    out_dir = args[1]
+
     if len(args) == 1:
-        os.system(f"git clone https://github.com/{args[0].lower()}")
+        os.system(f"git clone https://github.com/{package_name}")
 
     elif len(args) == 2:
-        os.system(f"git clone https://github.com/{args[0].lower()} {args[1]}")
+        os.system(f"git clone https://github.com/{package_name} {out_dir}")
 
     else:
         os.system("git pull")  # nosec: B607, B605

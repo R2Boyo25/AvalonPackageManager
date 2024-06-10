@@ -2,7 +2,6 @@
 Definition of APM's CommandLine Interface
 """
 
-from typing import Any
 from pathlib import Path
 
 import os
@@ -11,7 +10,9 @@ import semver
 
 from kazparse import Parse
 import kazparse
+import kazparse.flags
 from apm import path
+from apm.path import Paths
 from .pm_util import (
     install_package,
     uninstall_package,
@@ -34,7 +35,7 @@ from .changelog import (
     display_changelogs,
     display_all_changelogs,
 )
-from .case.case import getCaseInsensitivePath
+from .case.case import get_case_insensitive_path
 
 # Set up some initial information and configurations
 before = f"Avalon Package Manager V{VERSION} Copyright (C) {COPYRIGHT_YEAR} R2Boyo25"
@@ -82,28 +83,24 @@ def display_changes(machine: bool = False) -> None:
 
 
 def create_changelog(changelog_path: str) -> None:
-    "Create a changelog file at the specified path\
-    (if it doesn't exist)"
+    """Create a changelog file at the specified path (if it doesn't exist)"""
 
-    changelog_path = getCaseInsensitivePath(changelog_path)
-    changelog_path += "/CHANGELOG.MD"
+    changelog_path_: Path = get_case_insensitive_path(changelog_path) / "CHANGELOG.MD"
 
-    dname = os.path.dirname(changelog_path)
+    dname = changelog_path_.parent
+    chlog = get_case_insensitive_path(dname / "CHANGELOG.MD")
+    while not chlog.exists() and dname.parent != None:
+        dname = dname.parent
+        chlog = get_case_insensitive_path(dname / "CHANGELOG.MD")
 
-    chlog = getCaseInsensitivePath(dname + "/CHANGELOG.MD")
-    while not os.path.exists(chlog) and os.path.dirname(dname) != "/":
-        dname = os.path.dirname(dname)
-        chlog = getCaseInsensitivePath(dname + "/CHANGELOG.MD")
-        if os.path.exists(chlog):
+        if chlog.exists():
             return
 
-    if os.path.exists(changelog_path):
+    if changelog_path_.exists():
         return
 
-    with open(changelog_path, "w", encoding="utf-8") as changelog_file:
-        changelog_file.write(
-            """
-# Changelog
+    changelog_path_.write_text(
+        """# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -113,14 +110,14 @@ and this project adheres to [Semantic \
 Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-""".strip()
-            + "\n"
-        )
+""",
+        encoding="utf-8",
+    )
 
 
 # Define a command function for the 'release' submenu
 @p.command("release")
-def release_submenu(_: Any, __: Any, *args: str) -> None:
+def release_submenu(_flags: kazparse.flags.Flags, _paths: Paths, *args: str) -> None:
     "Submenu for interacting with changelogs"
 
     # Create a new Parse instance for the 'apm release' command with
@@ -143,9 +140,7 @@ def release_submenu(_: Any, __: Any, *args: str) -> None:
 
     # Define a command function 'releaseChange' within the 'release' submenu
     @release_parser.command("change")
-    def release_edit_changelog(
-        _flags: kazparse.flags.Flags, _args: str
-    ) -> None:
+    def release_edit_changelog(_flags: kazparse.flags.Flags, _args: str) -> None:
         "Edit `CHANGELOG.MD` w/ `$VISUAL_EDITOR`"
 
         # Ensure that the 'CHANGELOG.MD' file exists in the current
@@ -168,7 +163,7 @@ def release_submenu(_: Any, __: Any, *args: str) -> None:
 # Define a command function for the 'changes' command
 @p.command("changes")
 def package_view_changes(
-    _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+    _flags: kazparse.flags.Flags, paths: Paths, *args: str
 ) -> None:
     """
     View changes in `package` since `version`
@@ -179,9 +174,7 @@ def package_view_changes(
 
     # If no arguments are provided, show changes since version '0.0.0'
     if len(args) == 0:
-        changes = get_changes_after(
-            Path("."), semver.VersionInfo.parse("0.0.0")
-        )
+        changes = get_changes_after(Path("."), semver.VersionInfo.parse("0.0.0"))
         display_changelogs([("", changes)])
         return
 
@@ -208,27 +201,22 @@ def package_view_changes(
 
     # If a package name and version are provided, show changes since
     # that version for the specific package
-    pkgpath = paths["src"] / str(args[0])
-    changes = get_changes_after(pkgpath, semver.VersionInfo.parse("0.0.0"))
-    display_changelogs([(args[0], changes)])
+    package_name = args[0]
+    package_path = paths.source / package_name
+    changes = get_changes_after(package_path, semver.VersionInfo.parse("0.0.0"))
+    display_changelogs([(package_name, changes)])
 
 
 # Define a command function for the 'gen' command
 @p.command("gen")
-def generate_package(
-    _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
-) -> None:
+def generate_package(_flags: kazparse.flags.Flags, paths: Paths, *args: str) -> None:
     "Generate a package using AvalonGen"
-    os.system(
-        str(paths["bin"]) + "/avalongen " + " ".join([f'"{i}"' for i in args])
-    )
+    os.system(str(paths.binaries) + "/avalongen " + " ".join([f'"{i}"' for i in args]))
 
 
 # Define a command function for the 'install' command
 @p.command("install")
-def cli_install_package(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
-) -> None:
+def cli_install_package(flags: kazparse.flags.Flags, paths: Paths, *args: str) -> None:
     "Installs a package"
 
     install_package(flags, paths, list(args))
@@ -240,7 +228,7 @@ def cli_install_package(
 # Define a command function for the 'uninstall' command
 @p.command("uninstall")
 def cli_uninstall_package(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+    flags: kazparse.flags.Flags, paths: Paths, *args: str
 ) -> None:
     "Uninstalls a package"
 
@@ -249,9 +237,7 @@ def cli_uninstall_package(
 
 # Define a command function for the 'update' command (hidden)
 @p.command("update", hidden=True)
-def cli_update_package(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
-) -> None:
+def cli_update_package(flags: kazparse.flags.Flags, paths: Paths, *args: str) -> None:
     "Update to the newest version of a repo, \
     then recompile + reinstall program"
 
@@ -264,7 +250,7 @@ def cli_update_package(
 # Define a command function for the 'refresh' command
 @p.command("refresh")
 def cli_refresh_cache_folder(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
+    flags: kazparse.flags.Flags, paths: Paths, *args: str
 ) -> None:
     "Refresh the main repository cache"
 
@@ -273,12 +259,10 @@ def cli_refresh_cache_folder(
 
 # Define a command function for the 'pack' command
 @p.command("pack")
-def create_apm(
-    _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
-) -> None:
+def create_apm(_flags: kazparse.flags.Flags, paths: Paths, *args: str) -> None:
     "Generate .apm file with AvalonGen"
     os.system(
-        str(paths["bin"])
+        str(paths.binaries)
         + "/avalongen "
         + "package "
         + " ".join([f'"{i}"' for i in args])
@@ -287,9 +271,7 @@ def create_apm(
 
 # Define a command function for the 'unpack' command
 @p.command("unpack")
-def unpack_apm(
-    _flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
-) -> None:
+def unpack_apm(_flags: kazparse.flags.Flags, paths: Paths, *args: str) -> None:
     "Unpack .apm file with AvalonGen"
     raise NotImplementedError
     # os.system(
@@ -302,18 +284,14 @@ def unpack_apm(
 
 # Define a command function for the 'redobin' command (hidden)
 @p.command("redobin", hidden=True)
-def cli_redo_bin(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
-) -> None:
+def cli_redo_bin(flags: kazparse.flags.Flags, paths: Paths, *args: str) -> None:
     "Regenerate symlinks for a package"
     redo_symlinks_for_package(flags, paths, *args)
 
 
 # Define a command function for the 'installed' command
 @p.command("installed")
-def cli_list_nstalled(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
-) -> None:
+def cli_list_nstalled(flags: kazparse.flags.Flags, paths: Paths, *args: str) -> None:
     "List installed packages"
 
     # Call the 'installed' function to list installed packages
@@ -322,9 +300,7 @@ def cli_list_nstalled(
 
 # Define a command function for the 'src' command
 @p.command("src")
-def cli_download_source(
-    flags: kazparse.flags.Flags, paths: dict[str, Path], *args: str
-) -> None:
+def cli_download_source(flags: kazparse.flags.Flags, paths: Paths, *args: str) -> None:
     "Download a repo into a folder"
 
     download_package_source(flags, paths, *args)
